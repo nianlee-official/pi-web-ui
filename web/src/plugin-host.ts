@@ -4,11 +4,9 @@ export { getPluginTtsProvider, listPluginTtsProviders, onTtsProvidersChange } fr
 import { registerImageOcrProvider, listImageOcrProviders, type ImageOcrProvider } from "./image-ocr-providers";
 import { openImageLightbox, type ImageLightboxTarget } from "./image-lightbox-bridge";
 
-import type { BrowserHostBridge } from "../../browser/contracts";
 import type { AppSend } from "./app-globals";
 import { getCostCurrencySymbol, registerCostFormatter, setCostCurrencySymbol, type CostFormatter } from "./cost-format";
 import { composeToComposer, isComposerReady, type ComposerPayload } from "./composer-bridge";
-import { isDesktopShell } from "./desktop";
 import type { UiPluginCatalogEntry } from "./types";
 import { randomUuid } from "./uuid";
 
@@ -632,21 +630,6 @@ export function createPluginHostApi(deps: PluginHostDeps): PluginHostApi {
 		async pageCall(opts) {
 			const op = String(opts?.op ?? "").trim();
 			if (!op) return { ok: false, error: "pageCall 需要一个动作名（op）" };
-			const native = (window as unknown as { __piBrowser?: BrowserHostBridge }).__piBrowser;
-			if (native?.version === 1 && typeof native.pageCall === "function") {
-				try {
-					return await native.pageCall({ ...opts, op, timeoutMs: opts.timeoutMs ?? 30000 });
-				} catch (err) {
-					return { ok: false, error: err instanceof Error ? err.message : String(err) };
-				}
-			}
-			if (isDesktopShell()) {
-				return {
-					ok: false,
-					error:
-						"此桌面版尚未提供原生浏览器桥；请升级到支持 AI Browser 的桌面版，或在系统浏览器中使用 page-picker 扩展。/ Native browser bridge unavailable; upgrade the desktop app or use page-picker in a regular browser.",
-				};
-			}
 			const bridge = await waitForPageBridge(deps.bridgeWaitMs ?? 3000);
 			if (!bridge) {
 				return {

@@ -101,24 +101,6 @@ describe("matchAtToken", () => {
 	});
 
 	describe("mapPageHits", () => {
-		it("原生同源标签页保持各自tabId，扩展页保留origin", () => {
-			const hits = mapPageHits(
-				"Browser",
-				[
-					{ origin: "https://example.com", title: "First", open: true, tabId: "native-one" },
-					{ origin: "https://example.com", title: "Second", open: true, tabId: "native-two" },
-					{ origin: "https://extension.example", title: "Extension", open: true },
-				],
-				"",
-			);
-			expect(hits.map((hit) => hit.attachments?.[0]?.path)).toEqual([
-				"native-one",
-				"native-two",
-				"https://extension.example",
-			]);
-			expect(hits[0].hint).toBe("https://example.com");
-		});
-
 		it("标题/origin 双字段过滤，无标题回落 origin", () => {
 			const pages = [
 				{ origin: "https://example.com", title: "Example", open: true },

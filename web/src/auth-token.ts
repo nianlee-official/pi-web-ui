@@ -12,13 +12,11 @@
  * 注意 `?token=` 仅负责引导建立 cookie；已建立后仅凭 cookie 即可导航，
  * 地址栏 token 自然不再产生可见作用（issue #71）。
  */
-import { getMobileRuntime, isMobileServerUrl } from "./mobile-runtime";
 
 const KEY = "pi-web-ui:token";
 
 /** 应用启动时调用一次：吸收 URL 里的 ?token= 并清洗地址栏。 */
 export function initAuthToken(): void {
-	if (getMobileRuntime()) return;
 	try {
 		const url = new URL(window.location.href);
 		const t = url.searchParams.get("token");
@@ -42,13 +40,6 @@ function authToken(): string {
 
 /** 给相对路径 URL 追加 token 查询参数（已带 query 的用 & 连接）。 */
 export function withToken(url: string): string {
-	const mobile = getMobileRuntime();
-	if (mobile) {
-		if (!mobile.token || !isMobileServerUrl(url)) return url;
-		const authenticated = new URL(url);
-		authenticated.searchParams.set("token", mobile.token);
-		return authenticated.href;
-	}
 	const t = authToken();
 	if (!t) return url;
 	return `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(t)}`;

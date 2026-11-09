@@ -32,7 +32,6 @@ export const LEGACY_SUBAGENT_TOOL_NAMES = [
 export const DELEGATE_TASK_TOOL_NAME = "delegate_task";
 export const ASK_USER_QUESTION_TOOL_NAME = "ask_user_question";
 export const BROWSER_PAGE_TOOL_NAME = "browser_page";
-export const BROWSER_SCRIPT_TOOL_NAME = "browser_script";
 export const CONVERSATION_READ_TOOL_NAME = CONVERSATION_TOOL_NAME;
 export const SKILL_TOOL_NAME = "skill";
 export const SCHEDULE_TOOL_NAME = "schedule";
@@ -110,14 +109,6 @@ export const AGENT_TOOL_CATALOG: AgentToolEntry[] = [
 		dshVisible: false,
 		descKey: "browserPageEnabledDesc",
 		offHintKey: "browserPageOffHint",
-	},
-	{
-		name: BROWSER_SCRIPT_TOOL_NAME,
-		group: "other",
-		defaultOn: false,
-		dshVisible: false,
-		descKey: "browserScriptEnabledDesc",
-		offHintKey: "browserScriptOffHint",
 	},
 	{
 		name: CLAIM_FILES_TOOL_NAME,

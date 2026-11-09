@@ -7,7 +7,7 @@
 
 ## 0. 是什么
 
-pi 编码智能体（`@earendil-works/pi-coding-agent` SDK）的 Web 聊天界面：浏览器对话、文件树、附件、内置终端、模型管理、插件市场、设备中心/群组、画布工作流、Electron 桌面壳。
+pi 编码智能体（`@earendil-works/pi-coding-agent` SDK）的 Web 聊天界面：浏览器对话、文件树、附件、内置终端、模型管理、插件市场、设备中心/群组、画布工作流。
 技术栈：Node（>= 22.19.0）+ Express + `ws` 后端 · React 19 + Vite 前端 · xterm.js + node-pty 终端 · 单文件 `web/src/styles.css` 主题基线。版本号 `package.json` 与 `package-lock.json` 两处同步。
 
 ## 1. 关键功能 → 事实源文件 → 文档
@@ -23,9 +23,7 @@ pi 编码智能体（`@earendil-works/pi-coding-agent` SDK）的 Web 聊天界�
 | 工具开关 / 工具提示词 / 内置工具覆盖 | `server/tool-manager.ts`★ · `server/tool-prompts.ts`★ · `server/tool-overrides.ts` · `server/bash-timeout.ts`（bash/powershell 默认超时单源） | [`agent-rules.md`](docs/agent-rules.md#二工具定义与提示词规范) · [`tool-context-budget.md`](docs/tool-context-budget.md) |
 | 上下文预算 / 延迟加载 / 证据外置 | `server/soft-cap.ts` · `server/request-context.ts` · `server/evidence-tool-hooks.ts` | [`tool-context-budget.md`](docs/tool-context-budget.md) |
 | 工具审批门禁与规则库 | `server/tool-approval.ts` | [`architecture-core.md`](docs/architecture-core.md#审批队列与共享展示) |
-| 内置浏览器 / 桌面三模式 / Web 原生桥 | `browser/` · `desktop/browser-host.ts` · `web/src/browser-control.ts` | [`architecture-browser.md`](docs/architecture-browser.md) |
-| 页面脚本注入（临时 / 永久，`browser_script`） | `browser/runtime/scripts.ts` · `browser/automation/scripts.ts` · `server/browser-script-tool.ts` | [`architecture-browser.md`](docs/architecture-browser.md) |
-| 手机 App / 多设备切换 / 原生通知 | `mobile/` · `web/src/mobile-runtime.ts` · `server/mobile-push.ts` · `server/device-center/hub-mobile.ts` | [`mobile.md`](docs/mobile.md) |
+| 浏览器页面操作 / page-picker 扩展桥 | `server/browser-page-tool.ts` · `web/src/browser-control.ts` · `plugins/page-picker/extension/` | [`architecture-browser.md`](docs/architecture-browser.md) |
 | 终端 PTY / 原生 CLI / bash 接管 / SCM | `server/terminals.ts` · `server/native-cli.ts` · `server/engine-catalog.ts`★ · `server/engine-cli.ts` · `web/src/components/NativeCliPanel.tsx` | [`architecture-terminal.md`](docs/architecture-terminal.md) |
 | 命令执行防卡死 / 硬超时 / 后台托管 | `scripts/safe-exec.mjs`★ · `server/process-utils.ts`（`killPidTree` 单源） | [`development.md`](docs/development.md#命令执行防卡死) · [`agent-rules.md`](docs/agent-rules.md#七终端命令执行防卡死) |
 | 附件 / 图片预览 / OCR / 标注 / 系统截图 | `server/file-save.ts` · `web/src/components/ImageLightbox.tsx` · `plugins/image-ocr/` · `server/system-screenshot.ts` | [`architecture-attachments.md`](docs/architecture-attachments.md) |
@@ -79,6 +77,6 @@ pi 编码智能体（`@earendil-works/pi-coding-agent` SDK）的 Web 聊天界�
 ## 4. 提交前三连验（CI 硬门禁）
 
 1. `npx prettier --write <改动文件>`
-2. `npm run typecheck`（5 个 tsconfig 零错误；单测 mock 用 `{} as any`）
+2. `npm run typecheck`（4 个 tsconfig 零错误；单测 mock 用 `{} as any`）
 3. `npx vitest run <相关单测>`
 <!-- prettier-ignore-end -->

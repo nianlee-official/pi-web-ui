@@ -1,7 +1,6 @@
 import type { UiPluginInfo } from "./types";
 import type { FenceRenderContext, FenceRenderer, PluginViewModule } from "./plugin-loader";
 import { appUrl } from "./base-url";
-import { isMobileRuntime } from "./mobile-runtime";
 
 const PLUGIN_DATA_EVENT = "pi-web-ui:plugin-data";
 
@@ -42,7 +41,6 @@ export function setFenceSend(
 }
 
 export function syncFenceRenderers(plugins: UiPluginInfo[], epoch: number): void {
-	if (isMobileRuntime()) plugins = [];
 	if (epoch !== lastEpoch) {
 		lastEpoch = epoch;
 		cache.clear();
@@ -76,7 +74,6 @@ export function syncFenceRenderers(plugins: UiPluginInfo[], epoch: number): void
 }
 
 export async function renderFence(lang: string, code: string): Promise<HTMLElement | null> {
-	if (isMobileRuntime()) return null;
 	const pluginId = registry.get(lang);
 	if (!pluginId) return null;
 
@@ -136,7 +133,6 @@ const widgetFailed = new Set<string>();
 let lastWidgetEpoch = -1;
 
 export function syncMessageWidgets(plugins: UiPluginInfo[], epoch: number): void {
-	if (isMobileRuntime()) plugins = [];
 	if (epoch !== lastWidgetEpoch) {
 		lastWidgetEpoch = epoch;
 		widgetCache.clear();
@@ -169,7 +165,6 @@ export function hasMessageWidget(type: string): boolean {
 }
 
 export async function loadMessageWidget(type: string): Promise<FenceRenderer | null> {
-	if (isMobileRuntime()) return null;
 	const pluginId = widgetRegistry.get(type);
 	if (!pluginId) return null;
 

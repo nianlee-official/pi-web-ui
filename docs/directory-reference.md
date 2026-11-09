@@ -12,10 +12,6 @@ pi-web-ui/
 ├── server/                     # 后端（Node ESM，编译到 dist/server/）
 ├── web/                        # 前端（React + Vite，编译到 web/dist/）
 ├── bin/pi-web-ui.mjs           # CLI：前台启动 / server install|uninstall|start|stop|restart|status
-├── desktop/                    # Electron 桌面壳（sidecar：随机空闲口起 dist/server + BrowserWindow）
-│   ├── main.ts                 # 主进程：ready → 选空闲口 → spawn server(ELECTRON_RUN_AS_NODE) → loadURL
-│   ├── electron-builder.yml    # 打包配置（win nsis / mac dmg / linux AppImage；npmRebuild:false）
-│   └── README.md               # 桌面版说明：跑起来 / 约定 / 发布 / 签名（SignPath）
 ├── deploy/                     # 部署示例：launchd plist / systemd unit / Windows 任务 XML
 ├── themes/                     # 内置主题（完整样式表：:root 变量 + 任意选择器/布局覆盖皆可，styles.css 只是共享基线）
 ├── make-light-theme.mjs        # 主题生成器（从 styles.css 的 :root 变量清单生成纯调色板）
@@ -33,7 +29,6 @@ pi-web-ui/
 ├── scripts/safe-exec.mjs       # 跨平台防卡死执行器：stdin 接地 + 硬超时杀进程树（复用 killPidTree）+ 日志落盘/--detach 后台托管；日志落 .safe-exec/（gitignore）
 ├── .github/workflows/ci.yml    # CI：协议同步 → typecheck → build → vitest → 冒烟
 ├── .github/workflows/release-notes.yml   # tag 推送 → 按 CHANGELOG 建/更新 GitHub Release
-├── .github/workflows/desktop-release.yml  # tag 推送 → windows-latest 出 NSIS 安装包并附到 Release（签名以后加这里）
 ├── extensions/                 # pi 扩展：webui.ts（/webui 命令启动本机服务并打开浏览器）
 ├── plugins/                    # 官方插件（webmail / db-client / vscode-editor / sftp / demo-mailbox / mermaid / run-trace / legado-web / wechat-ilink / image-toolkit / notes / live-preview / voice-input / desktop-use / pm2-manager，各自的 README.md 见其目录；page-picker/extension 是**浏览器扩展**，不是 pi-web-ui 插件）
 │   └── catalog.json            # ★ 插件市场内置列表（随包发布；只收本仓库自带的 plugins/<id>，第三方插件走社区清单仓库）
@@ -234,7 +229,6 @@ web/src/
 ├── cache-stats.ts      # 缓存统计（底栏）
 ├── chat-width-settings.ts # 聊天列宽设置
 ├── code-lines.ts       # 代码行号辅助
-├── desktop.ts / desktop-updater.ts # 桌面壳前端侧（更新检查/重启）
 ├── model-usage.ts      # 模型用量统计
 ├── panel-sash.ts       # 面板分隔条（拖拽调宽）
 ├── provider-oauth-state.ts # 服务商 OAuth 前端状态（配 ProviderOAuthControls）

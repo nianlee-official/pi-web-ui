@@ -8,7 +8,7 @@
 
 <h1 align="center">把 AI 编码工作放在一起。</h1>
 
-<p align="center">在浏览器或桌面里，串起对话、工具与协作。</p>
+<p align="center">在浏览器里，串起对话、工具与协作。</p>
 
 [English](./README.md) · **简体中文** · [繁體中文](./README.zh-TW.md) · [官网](https://xing-shuyin.github.io/pi-web-ui-site/) · [使用文档](https://xing-shuyin.github.io/pi-web-ui-site/docs.html) · [下载](https://github.com/xing-shuyin/pi-web-ui/releases)
 
@@ -37,8 +37,6 @@ pwu .
 
 默认打开浏览器，地址为 `http://127.0.0.1:8787`。
 首次使用，在设置中配置模型提供商、凭据与模型，即可开始对话。
-
-偏好安装包？可以选择 [Electron 桌面版或 Windows 便携包](https://github.com/xing-shuyin/pi-web-ui/releases)。
 
 [安装指南](https://xing-shuyin.github.io/pi-web-ui-site/docs.html#installation) · [工作台文档](https://xing-shuyin.github.io/pi-web-ui-site/docs.html)
 
@@ -80,12 +78,10 @@ Bot 群组把设备上的代理带入共享对话，用于协调与任务派发�
 
 ## 在合适的地方打开
 
-| 入口                  | 适合的场景                                          |
-| --------------------- | --------------------------------------------------- |
-| **Web**               | 在浏览器中打开本地工作区，或访问已配置的服务。      |
-| **Electron 桌面版**   | 使用带内置浏览器和本地工作流集成的桌面应用。        |
-| **Windows 便携版**    | 使用打包好的 Windows 入口；随包组件以发布说明为准。 |
-| **后台服务 / Docker** | 在自己的机器或服务器上持续提供工作区。              |
+| 入口                  | 适合的场景                                     |
+| --------------------- | ---------------------------------------------- |
+| **Web**               | 在浏览器中打开本地工作区，或访问已配置的服务。 |
+| **后台服务 / Docker** | 在自己的机器或服务器上持续提供工作区。         |
 
 安装应用后，仍需单独配置模型凭据。
 远程访问的鉴权与网络入口设置，请按部署文档完成。

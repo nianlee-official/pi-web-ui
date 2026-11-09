@@ -2,7 +2,7 @@
 
 ## 官方供应商
 
-普通安装及便携版共用模型管理的官方 API 快速配置入口，协议、端点、地区与维护边界见 [官方供应商接入](official-providers.md)。
+Web UI 的模型管理提供官方 API 快速配置入口，协议、端点、地区与维护边界见 [官方供应商接入](official-providers.md)。
 
 ## 提示词模板命令
 
@@ -33,8 +33,6 @@ npm test             # Vitest 单测与仓库守卫（tests/unit/，含部分浏
 npm run test:smoke   # 零 token 协议冒烟聚合跑器（tests/run-smoke.mjs，82 个自包含测试；--core 只跑 PR 快检子集；--no-build 跳过套件前的构建）
 npm run test:freeze  # 冻结/重连回归测试（Playwright，需要本机 chromium headless）
 ```
-
-Electron 相关依赖（`electron` / `electron-builder` 的二进制）走 npmmirror：打包命令（`desktop:dist`、`desktop:portable*`）已由 `scripts/run-electron-builder.mjs` 自动注入 `ELECTRON_MIRROR` / `ELECTRON_BUILDER_BINARIES_MIRROR`（默认值见 `scripts/lib/electron-mirror.mjs`）。这些镜像**禁止**写进 `.npmrc`——npm 11 会对自定义键告警，npm 12 起不再透传。首次 `npm install` 要下载 Electron 二进制，国内网络请先自带 `ELECTRON_MIRROR` 环境变量。
 
 ## 命令执行防卡死
 

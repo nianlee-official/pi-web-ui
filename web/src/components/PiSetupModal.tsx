@@ -3,7 +3,6 @@ import { FiCpu, FiRefreshCw, FiX } from "react-icons/fi";
 import type { ProviderOAuthFlowState, ProviderStatus } from "../types";
 import { useT } from "../i18n";
 import { appSend, useIsManaged } from "../app-globals";
-import { isDesktopShell } from "../desktop";
 import { ProviderOAuthControls, type ProviderOAuthResultView } from "./ProviderOAuthControls";
 
 interface PiSetupModalProps {
@@ -26,7 +25,6 @@ export function PiSetupModal({
 	onClose,
 }: PiSetupModalProps) {
 	const t = useT();
-	const isDesktop = isDesktopShell();
 	const managed = useIsManaged();
 	const [installing, setInstalling] = useState(false);
 	const [provider, setProvider] = useState("");
@@ -102,7 +100,7 @@ export function PiSetupModal({
 							</button>
 						</div>
 					</div>
-				) : piAgentInstalled || installResult?.ok || isDesktop ? (
+				) : piAgentInstalled || installResult?.ok ? (
 					<div className="setup-key-form">
 						<div className="setup-done">{installResult?.ok ? t("installDone") : t("cliReadyHint")}</div>
 						<label className="field">

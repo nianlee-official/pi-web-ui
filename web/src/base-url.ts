@@ -1,6 +1,3 @@
-import { getMobileRuntime, isMobileServerUrl } from "./mobile-runtime";
-import { withToken } from "./auth-token";
-
 let cachedBase: string | null = null;
 
 /** Capability root, including when the page is a nested resource or index.html. */
@@ -55,18 +52,7 @@ export function withAppBase(path: string, base: string): string {
 }
 
 export function appUrl(path: string): string {
-	const mobile = getMobileRuntime();
-	return mobile ? new URL(path.replace(/^\/+/, ""), `${mobile.serverUrl}/`).href : withAppBase(path, appBase());
-}
-
-export function appResourceUrl(path: string): string {
-	const url = appUrl(path);
-	return getMobileRuntime() ? withToken(url) : url;
-}
-
-/** Native service resources need CORS mode so the browser sends the capability-bound Origin. */
-export function appResourceCrossOrigin(url?: string): "anonymous" | undefined {
-	return url && isMobileServerUrl(url) ? "anonymous" : undefined;
+	return withAppBase(path, appBase());
 }
 
 export function appWsUrl(path = "/ws"): string {

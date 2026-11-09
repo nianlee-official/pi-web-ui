@@ -112,15 +112,12 @@ import {
 } from "./task-settlement.js";
 import type { DeviceTaskEventFrame } from "../protocol.js";
 import { RELAY_LIMITS } from "./relay.js";
-import { createHubMobileApp, acceptMobileNotification, type NativeCapabilityRequest } from "./hub-mobile.js";
-import { createMobilePushService } from "../mobile-push.js";
 import { HubUpgradeError, type HubUpgradeManager } from "./hub-upgrade.js";
 import { installHubOrchestration } from "./hub-orchestration.js";
 import { queueRouterJob, nextRouterAction, type RouterJob } from "./group-router.js";
 
 export interface HubTaskEvent extends Omit<DeviceTaskEventFrame, "type"> {}
 export interface HubRelay {
-	createNativeCapability?: (request: NativeCapabilityRequest) => Promise<string | null>;
 	callDevice?: (
 		deviceId: string,
 		action: import("./relay.js").DeviceCommand,
@@ -261,19 +258,6 @@ export async function createDeviceHub(options: DeviceHubOptions) {
 	const app = express();
 	app.disable("x-powered-by");
 	const loginLimit = new HubRateLimiter(10, 60000);
-	const mobilePush = createMobilePushService({ dataDir: options.dataDir });
-	const mobileApp = createHubMobileApp({
-		store,
-		publicUrl: options.publicUrl,
-		loginLimit,
-		mobilePush,
-		isOnline: (id) => options.isOnline?.(id) ?? false,
-		createCapability: (request) => options.relay?.createNativeCapability?.(request) ?? Promise.resolve(null),
-	});
-	app.use((req, res, next) => {
-		if (/^\/api\/(?:mobile-hub|mobile-push)(?:\/|$)/.test(req.path)) return mobileApp(req, res, next);
-		next();
-	});
 	app.use((req, _res, next) => {
 		if (!req.path.startsWith("/api/device-user/")) return next();
 		const deviceId = req.headers["x-device-id"];
@@ -364,11 +348,7 @@ export async function createDeviceHub(options: DeviceHubOptions) {
 			(req.method === "PUT" && /^\/rooms\/[^/]+\/blackboard(?:\/sections\/[^/]+)?$/.test(suffix))
 		)
 			req.url = req.url.replace("/api/agent/", "/api/");
-		else if (!(
-			(suffix === "/transfers" && req.method === "POST") ||
-			(suffix === "/bots" && req.method === "PUT") ||
-			(suffix === "/mobile-notifications" && req.method === "POST")
-		))
+		else if (!((suffix === "/transfers" && req.method === "POST") || (suffix === "/bots" && req.method === "PUT")))
 			fail(404, "Agent route missing");
 		next();
 	});
@@ -414,13 +394,6 @@ export async function createDeviceHub(options: DeviceHubOptions) {
 			return blackboardJson(req, res, next);
 		}
 		json(req, res, next);
-	});
-	app.post("/api/agent/mobile-notifications", async (req, res) => {
-		const agent = agents.get(req)!;
-		if (store.getDeviceOwner(agent.device.id) !== agent.account.id) fail(401, "Device revoked");
-		const device = store.getDevice(agent.device.id)!;
-		await acceptMobileNotification(req.body, device, mobilePush);
-		res.json({ ok: true });
 	});
 	const pairLimit = new HubRateLimiter(20, 60000);
 	const pairs = new Map<
@@ -4136,7 +4109,6 @@ export async function createDeviceHub(options: DeviceHubOptions) {
 			void reconcilePendingPublications();
 		},
 		async close() {
-			await mobilePush.dispose();
 			clearInterval(recoverySweepTimer);
 			lockManager.close();
 			await groupEvents.close();

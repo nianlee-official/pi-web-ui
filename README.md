@@ -8,7 +8,7 @@
 
 <h1 align="center">A home for your AI coding work.</h1>
 
-<p align="center">Conversations, tools, and collaboration in one browser or desktop workspace.</p>
+<p align="center">Conversations, tools, and collaboration in one browser workspace.</p>
 
 **English** · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [Website](https://xing-shuyin.github.io/pi-web-ui-site/) · [Docs](https://xing-shuyin.github.io/pi-web-ui-site/docs.html) · [Downloads](https://github.com/xing-shuyin/pi-web-ui/releases)
 
@@ -37,8 +37,6 @@ pwu .
 
 Open `http://127.0.0.1:8787` if the browser does not open automatically.
 In workspace settings, configure a model provider and its credentials, select a model, and send your first task.
-
-Prefer a packaged app? Choose an [Electron desktop build or Windows portable package](https://github.com/xing-shuyin/pi-web-ui/releases).
 
 [Installation guide](https://xing-shuyin.github.io/pi-web-ui-site/docs.html#installation) · [Workspace documentation](https://xing-shuyin.github.io/pi-web-ui-site/docs.html)
 
@@ -80,12 +78,10 @@ Browse the [community plugin directory](https://github.com/xing-shuyin/pi-web-ui
 
 ## Pick your place to work
 
-| Entry point                     | A good fit for                                                                   |
-| ------------------------------- | -------------------------------------------------------------------------------- |
-| **Web**                         | Opening the workspace in a browser, locally or through a configured service.     |
-| **Electron desktop**            | A desktop application with a built-in browser and local workflow integration.    |
-| **Windows portable**            | A packaged Windows entry point; check the release notes for included components. |
-| **Background service / Docker** | Keeping the workspace available on your own machine or server.                   |
+| Entry point                     | A good fit for                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| **Web**                         | Opening the workspace in a browser, locally or through a configured service. |
+| **Background service / Docker** | Keeping the workspace available on your own machine or server.               |
 
 Model credentials are configured separately from the app installation.
 For remote access, use the deployment guide to configure authentication and your network entry point.

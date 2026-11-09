@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAppField } from "./app-globals";
 import { withToken } from "./auth-token";
-import { appResourceCrossOrigin, appResourceUrl, appUrl } from "./base-url";
+import { appUrl } from "./base-url";
 
 export interface ThemeInfo {
 	id: string;
@@ -38,13 +38,11 @@ function saveTheme(id: string | null): void {
 }
 function setThemeHref(link: HTMLLinkElement, id: string): void {
 	const href = themeHref(id);
-	const crossOrigin = appResourceCrossOrigin(href);
-	if (crossOrigin) link.crossOrigin = crossOrigin;
 	link.href = href;
 }
 
 function themeHref(id: string): string {
-	return appResourceUrl(`/themes/${encodeURIComponent(id)}.css?v=${THEME_ASSET_REV}.${assetReload}`);
+	return appUrl(`/themes/${encodeURIComponent(id)}.css?v=${THEME_ASSET_REV}.${assetReload}`);
 }
 
 export function applyTheme(id: string | null, options: { reload?: boolean } = {}): void {

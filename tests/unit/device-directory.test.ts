@@ -5,10 +5,10 @@ import { expect, it, vi } from "vitest";
 import { DeviceDirectory } from "../../web/src/components/DeviceDirectory.js";
 import { closeDesktopAccess, getDesktopAccess } from "../../web/src/device-access.js";
 import { LanguageProvider } from "../../web/src/i18n.js";
-it("opens device pages through the desktop bridge and desktops in the shared window", async () => {
-	const openHub = vi.fn(async (_url: string) => true);
-	vi.stubGlobal("piDesktop", { openHub });
-	const popup = vi.spyOn(window, "open");
+it("opens device pages in a browser tab and desktops in the shared window", async () => {
+	const replace = vi.fn();
+	const tab = { opener: window, location: { replace }, close: vi.fn() };
+	const popup = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(async (_url: unknown, options?: RequestInit) => ({
@@ -35,11 +35,12 @@ it("opens device pages through the desktop bridge and desktops in the shared win
 		const links = host.querySelectorAll<HTMLAnchorElement>(".dd-device a");
 		await act(async () => links[0].click());
 		await act(async () => links[1].click());
-		expect(popup).not.toHaveBeenCalled();
-		expect(openHub.mock.calls.map(([url]) => url)).toEqual(["https://hub.example.com/device/mac/__open?ticket=secret"]);
+		expect(popup).toHaveBeenCalledOnce();
+		expect(tab.opener).toBeNull();
+		expect(replace).toHaveBeenCalledWith("https://hub.example.com/device/mac/__open?ticket=secret");
 		expect(getDesktopAccess()?.url).toBe("https://hub.example.com/device/mac/__open?ticket=secret&next=%2Fdesktop");
 		closeDesktopAccess(getDesktopAccess()!);
-		openHub.mockResolvedValue(false);
+		popup.mockReturnValue(null);
 		await act(async () => links[0].click());
 		expect(host.querySelector('[role="alert"]')).not.toBeNull();
 	} finally {

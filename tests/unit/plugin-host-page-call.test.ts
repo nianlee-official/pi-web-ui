@@ -30,8 +30,6 @@ function installBridge(impl?: (req: unknown) => Promise<unknown>): unknown[] {
 
 afterEach(() => {
 	delete (globalThis as unknown as Record<string, unknown>).__piBridge;
-	delete (globalThis as unknown as Record<string, unknown>).__piBrowser;
-	delete (window as unknown as Record<string, unknown>).piDesktop;
 });
 
 describe("pageCall（模型 → 浏览器扩展）", () => {
@@ -79,47 +77,6 @@ describe("pageCall（模型 → 浏览器扩展）", () => {
 		const res = await api().pageCall({ op: "read" });
 		expect(res.ok).toBe(false);
 		if (!res.ok) expect(res.error).toContain("没打开");
-	});
-
-	it("原生桥在桌面壳优先路由并原样返回，不覆盖应用宿主对象", async () => {
-		(window as unknown as Record<string, unknown>).piDesktop = { isDesktop: true };
-		const calls = installBridge();
-		const pageCall = vi.fn(async () => ({ ok: true, result: { title: "Native" } }));
-		(globalThis as unknown as Record<string, unknown>).__piBrowser = { version: 1, pageCall };
-		const req = { op: "read", args: { what: "title" }, target: "native-tab", timeoutMs: 8000 };
-		expect(await api().pageCall(req)).toEqual({ ok: true, result: { title: "Native" } });
-		expect(pageCall).toHaveBeenCalledWith(req);
-		expect(calls).toEqual([]);
-	});
-
-	it("原生失败和异常不重试扩展，保留真实原因", async () => {
-		const calls = installBridge();
-		const pageCall = vi.fn(async () => ({ ok: false, error: "Native target closed" }));
-		(globalThis as unknown as Record<string, unknown>).__piBrowser = { version: 1, pageCall };
-		expect(await api().pageCall({ op: "read", target: "stale-tab" })).toEqual({
-			ok: false,
-			error: "Native target closed",
-		});
-		pageCall.mockRejectedValueOnce(new Error("Native disconnected"));
-		expect(await api().pageCall({ op: "read" })).toEqual({ ok: false, error: "Native disconnected" });
-		expect(calls).toEqual([]);
-	});
-
-	it("旧桌面壳无原生能力快速提示，不等待扩展桥", async () => {
-		(window as unknown as Record<string, unknown>).piDesktop = { isDesktop: true };
-		const calls = installBridge();
-		expect(await api().pageCall({ op: "pages" })).toMatchObject({
-			ok: false,
-			error: expect.stringContaining("Native browser bridge unavailable"),
-		});
-		expect(calls).toEqual([]);
-	});
-
-	it("不支持的原生桥版本在网页版保留扩展路径", async () => {
-		const calls = installBridge();
-		(globalThis as unknown as Record<string, unknown>).__piBrowser = { version: 2, pageCall: vi.fn() };
-		expect(await api().pageCall({ op: "pages" })).toEqual({ ok: true, result: { title: "页面标题" } });
-		expect(calls).toEqual([{ op: "pages" }]);
 	});
 
 	it("空 op → 直接拒（连桥都不去找）", async () => {

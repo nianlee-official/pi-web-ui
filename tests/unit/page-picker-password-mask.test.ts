@@ -2,13 +2,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installBridgePage, uninstallBridgePage } from "../../plugins/page-picker/extension/src/content/bridge-page.js";
 
-/**
- * 页面侧内置动作（`__builtin`）的口令脱敏回归。
- *
- * 口径与桌面原生 `browser/automation/page-operation.ts` 一致：口令框的 value 不从任何一条路径出页面
- * （read query / read html / type 回显 / click 回显），否则明文会跟着 pageCall 结果进模型上下文。
- */
-
 const TOKEN = "test-bridge-token";
 
 type Invoke = (op: string, args?: Record<string, unknown>) => Promise<Record<string, unknown>>;

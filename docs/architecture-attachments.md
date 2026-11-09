@@ -126,7 +126,7 @@
 
 ### 系统截图（Windows 本机）
 
-- 输入框动作栏的 `host:composer-screenshot`（剪刀图标，上传按钮之后）由 `SystemScreenshotButton.tsx` 渲染，沿用栏位排序、显隐及图标编辑。点击后弹出「保留当前窗口截图」与「隐藏当前窗口截图」菜单：前者直接截取包含当前浏览器或 Electron 窗口的桌面，后者先最小化当前窗口。选择后拖动框选并松开完成；Esc / 右键取消，90 秒超时自动取消。菜单复用 `useFloatingPanel` 与 `ctx-menu`，支持点击外部 / Esc 关闭。
+- 输入框动作栏的 `host:composer-screenshot`（剪刀图标，上传按钮之后）由 `SystemScreenshotButton.tsx` 渲染，沿用栏位排序、显隐及图标编辑。点击后弹出「保留当前窗口截图」与「隐藏当前窗口截图」菜单：前者直接截取包含当前浏览器窗口的桌面，后者先最小化当前窗口。选择后拖动框选并松开完成；Esc / 右键取消，90 秒超时自动取消。菜单复用 `useFloatingPanel` 与 `ctx-menu`，支持点击外部 / Esc 关闭。
 - `server/system-screenshot.ts` 在正常鉴权后注册 `/api/system-screenshot`：GET 查询能力，POST 发起截图；`hideWindow` 仅接受布尔值，省略时默认 `true`，兼容原有客户端。同一服务同时只允许一张截图；仅限 Windows、回环 TCP 与回环 Host，拒绝代理转发头和跨源请求。远程客户端不能截取服务端桌面。
 - `server/system-screenshot-windows.ts` 通过异步 PowerShell STA 辅助进程调用 Win32 / WinForms。隐藏模式下前端临时给窗口标题附加随机 nonce，辅助进程仅在前台窗口标题匹配时最小化，避免焦点切换后误操作其他窗口；成功、取消和异常均恢复原窗口（含最大化状态）。保留模式不改标题、不最小化或恢复窗口，也不登记窗口恢复信息。断连通过 stdin 取消；辅助进程监测父进程退出，超时强制结束时服务端另行恢复隐藏的窗口。
 - 截取全部显示器构成的虚拟桌面后再框选，支持负坐标与混合 DPI；只返回所选 PNG，不落临时图片、不修改剪贴板。结果通过 `image-lightbox-bridge.ts` 的 `openImageLightbox` 打开通用预览，可标注、附加到输入框、复制、下载与缩放；取消无弹窗，不自动加入对话附件。非 Windows / 远程访问禁用按钮并说明原因。

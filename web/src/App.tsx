@@ -18,7 +18,6 @@ import { MessageList } from "./components/MessageList";
 import { ChatInput } from "./components/ChatInput";
 import { GoalBar } from "./components/GoalBar";
 import { SandboxModal } from "./components/SandboxModal";
-import { DesktopSplitResizer } from "./components/DesktopSplitResizer";
 import { WorktreeView, useWorktreeRefresh } from "./components/WorktreeBanner";
 import { FiRefreshCw, FiFeather } from "react-icons/fi";
 import { useEscapeKey } from "./shortcut-stack";
@@ -92,7 +91,6 @@ import {
 import { setFenceSend, syncFenceRenderers, syncMessageWidgets } from "./plugin-fence";
 import { findFileHandler, syncFileHandlers, type FileHandlerPlugin } from "./plugin-file-handlers";
 const PiSetupModal = lazy(() => import("./components/PiSetupModal").then((m) => ({ default: m.PiSetupModal })));
-import { isDesktopShell } from "./desktop";
 const ModelConfigModal = lazy(() =>
 	import("./components/ModelConfigModal").then((m) => ({ default: m.ModelConfigModal })),
 );
@@ -177,14 +175,6 @@ import { listImageOcrProviders, subscribeImageOcrProviders } from "./image-ocr-p
 import { projectNameFromCwd, useProjectTitle } from "./title-settings";
 import { useFaviconSettings, resolveInstanceName, syncServerFaviconConfig } from "./favicon-settings";
 import { notify, subscribeNotificationClicks } from "./notify";
-import {
-	consumeMobileNotificationTarget,
-	hasPendingMobileNotificationTarget,
-	isMobileRuntime,
-	MOBILE_NOTIFICATION_OPEN,
-	mobileNotificationRequest,
-	type MobileNotificationTarget,
-} from "./mobile-runtime";
 import { diffStreamingCues } from "./streaming-cues";
 import { markConversationsUnread, clearConversationUnread, useUnreadConversationKeys } from "./unread-conversations";
 import { getNoticeDurationMs } from "./notice-policy";
@@ -1167,7 +1157,6 @@ export function App() {
 
 	useEffect(() => {
 		const applyFromLocation = () => {
-			if (hasPendingMobileNotificationTarget()) return;
 			const parsed = parseSessionHash(window.location.hash);
 			if (!parsed) return;
 			if (parsed.messageId) {
@@ -1206,37 +1195,6 @@ export function App() {
 			unsubscribeNotifications();
 		};
 	}, [send]);
-
-	const lastMobileNotificationRef = useRef<string | null>(null);
-	useEffect(() => {
-		if (!isMobileRuntime() || !chat.ready) return;
-		const open = (event?: Event) => {
-			const target =
-				consumeMobileNotificationTarget() ??
-				((event as CustomEvent | undefined)?.detail as MobileNotificationTarget | undefined);
-			if (!target || (target.eventId && target.eventId === lastMobileNotificationRef.current)) return;
-			const request = mobileNotificationRequest(target, getClientId());
-			if (!request) {
-				pushNotice("warning", "The notification no longer identifies an open conversation.");
-				return;
-			}
-			lastMobileNotificationRef.current = target.eventId;
-			pendingHashSessionRef.current = null;
-			awaitingHashSessionRef.current = null;
-			setUrlJump(null);
-			setActiveGroupId(null);
-			setView("chat");
-			const localUrl = new URL(window.location.href);
-			localUrl.searchParams.delete("token");
-			localUrl.searchParams.delete("view");
-			localUrl.hash = "";
-			window.history.replaceState(null, "", localUrl.href);
-			send(request);
-		};
-		window.addEventListener(MOBILE_NOTIFICATION_OPEN, open);
-		open();
-		return () => window.removeEventListener(MOBILE_NOTIFICATION_OPEN, open);
-	}, [chat.ready, pushNotice, send]);
 
 	useEffect(() => {
 		const awaiting = awaitingHashSessionRef.current;
@@ -3240,8 +3198,7 @@ export function App() {
 				chat.state.piConfigured === false &&
 				!isNativeCliConversation &&
 				!setupDismissed &&
-				!manageModelsOpen &&
-				!isDesktopShell() && (
+				!manageModelsOpen && (
 					<Suspense fallback={null}>
 						<PiSetupModal
 							piConfigured={chat.state.piConfigured}
@@ -3593,7 +3550,6 @@ export function App() {
 				}
 				fallbackModel={chat.state?.model ? `${chat.state.model.provider}/${chat.state.model.id}` : undefined}
 			/>
-			<DesktopSplitResizer />
 			<BannerContainer />
 		</div>
 	);

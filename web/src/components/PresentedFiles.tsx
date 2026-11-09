@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { FiCopy, FiDownload, FiExternalLink, FiEye, FiFolder } from "react-icons/fi";
 import { useT } from "../i18n";
 import { appSend } from "../app-globals";
-import { appResourceCrossOrigin } from "../base-url";
 import { DOWNLOAD_FILE_NOT_FOUND, downloadFile, downloadUrl } from "../download";
 import { isFilePreviewOpen, openFilePreview } from "../file-preview-bridge";
 import { isLoopbackAccess, resolveWorkspaceFileUrl } from "../workspace-file-url";
@@ -191,7 +190,6 @@ function PresentRow({ item }: { item: PresentCardItem }) {
 					onClick={() => openFilePreview(target)}
 				>
 					<img
-						crossOrigin={appResourceCrossOrigin(downloadUrl(item.target, false))}
 						src={downloadUrl(item.target, false)}
 						alt={item.name}
 						loading="lazy"
@@ -202,7 +200,6 @@ function PresentRow({ item }: { item: PresentCardItem }) {
 			{media === "video" && (
 				<video
 					className="present-media-video"
-					crossOrigin={appResourceCrossOrigin(downloadUrl(item.target, false))}
 					src={downloadUrl(item.target, false)}
 					controls
 					preload="metadata"
@@ -212,7 +209,6 @@ function PresentRow({ item }: { item: PresentCardItem }) {
 			{media === "audio" && (
 				<audio
 					className="present-media-audio"
-					crossOrigin={appResourceCrossOrigin(downloadUrl(item.target, false))}
 					src={downloadUrl(item.target, false)}
 					controls
 					preload="metadata"

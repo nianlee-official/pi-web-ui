@@ -61,7 +61,6 @@ describe("private Bot orphan adoption boundary", () => {
 		expect(attached).toBe(fresh);
 		expect(create).toHaveBeenCalledWith("device-task-new", resolve("."), expect.any(ClientStateStore), {
 			blank: true,
-			onNotificationEvent: expect.any(Function),
 		});
 		expect(service.get(oldId)).toBe(old);
 		expect(service.get("device-task-new")).toBe(fresh);

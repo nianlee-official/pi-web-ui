@@ -85,12 +85,12 @@ export function makeBrowserPageTool(
 	return {
 		name: BROWSER_PAGE_TOOL_NAME,
 		label: "Browser page",
-		description: "Read or act on AI Browser tabs or page-picker.",
-		promptSnippet: "operate a page in AI Browser or through the page-picker extension",
+		description: "Read or act on authorized browser pages through page-picker.",
+		promptSnippet: "operate a page through the page-picker extension",
 		promptGuidelines: [
 			"Only use browser_page when the user asked you to read or act on a page in their browser; " +
 				"never click or type on their pages on your own initiative",
-			'Start with op:"pages"; the page marked active:true is the one the user is viewing now. When the user says "this page", pass that page\'s tabId (AI Browser) or origin (page-picker) as target.',
+			'Start with op:"pages"; the page marked active:true is the one the user is viewing now. When the user says "this page", pass that page\'s origin as target.',
 			"Multiple tabs may be open: always pass an explicit target rather than assuming one, " +
 				"and name the missing browser setting instead of retrying when the tool is unavailable.",
 		],
@@ -100,7 +100,7 @@ export function makeBrowserPageTool(
 				enum: [...BROWSER_PAGE_OPS],
 				description: BROWSER_PAGE_OP_SIGNATURE,
 			}),
-			target: Type.Optional(Type.String({ description: "Origin URL or native tabId" })),
+			target: Type.Optional(Type.String({ description: "Authorized page origin URL" })),
 			what: Type.Optional(Type.Unsafe<BrowserPageWhat>({ type: "string", enum: [...BROWSER_PAGE_WHAT] })),
 			selector: Type.Optional(Type.String()),
 			text: Type.Optional(Type.String()),

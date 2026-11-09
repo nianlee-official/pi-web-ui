@@ -1,6 +1,5 @@
 import { appUrl } from "./base-url";
 import { withToken } from "./auth-token";
-import { getMobileRuntime } from "./mobile-runtime";
 
 export type DesktopAccess = { id: string; hubUrl: string; url: string; zh: boolean; transport?: "lan" | "hub" };
 let desktopAccess: DesktopAccess | null = null;
@@ -19,17 +18,9 @@ export function closeDesktopAccess(expected: DesktopAccess) {
 }
 
 export async function openDeviceAccess(id: string, hubUrl: string, desktop: boolean, zh: boolean, detached = false) {
-	const mobile = getMobileRuntime();
-	if (mobile) {
-		if (!mobile.deviceAdapter) throw new Error("Native device access is unavailable");
-		await mobile.deviceAdapter.openDevice(id, hubUrl);
-		return;
-	}
 	const floating = desktop && !detached;
-	const shell = (window as unknown as { piDesktop?: { openHub?: (url: string) => Promise<boolean> } }).piDesktop;
-	const tab = floating || shell?.openHub ? null : window.open("about:blank", "_blank");
-	if (!floating && !shell?.openHub && !tab)
-		throw new Error(zh ? "请允许弹出窗口后重试。" : "Allow popups and try again.");
+	const tab = floating ? null : window.open("about:blank", "_blank");
+	if (!floating && !tab) throw new Error(zh ? "请允许弹出窗口后重试。" : "Allow popups and try again.");
 	if (tab) tab.opener = null;
 	try {
 		const response = await fetch(withToken(appUrl(`/api/device-center/devices/${encodeURIComponent(id)}/open`)), {
@@ -65,13 +56,6 @@ export async function openDeviceAccess(id: string, hubUrl: string, desktop: bool
 		if (floating) {
 			desktopAccess = { id, hubUrl, url: url.href, zh, transport: direct ? "lan" : "hub" };
 			listeners.forEach((listener) => listener());
-		} else if (shell?.openHub) {
-			if (direct) {
-				url.searchParams.set("hub", hub.origin);
-				if (typeof data.fallbackOrigin === "string") url.searchParams.set("portal", data.fallbackOrigin);
-			}
-			if (!(await shell.openHub(url.href)))
-				throw new Error(zh ? "无法打开设备窗口。" : "Could not open device window.");
 		} else if (tab) tab.location.replace(url.href);
 	} catch (error) {
 		tab?.close();

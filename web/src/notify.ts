@@ -1,5 +1,4 @@
 import { appBase, withAppBase } from "./base-url";
-import { getMobileRuntime, isMobileRuntime } from "./mobile-runtime";
 import { loadSoundSettings, type SoundKind, type SoundSettings } from "./sounds";
 import { formatSessionHash } from "./session-url";
 
@@ -10,18 +9,17 @@ export function subscribeNotificationClicks(onClick: (url: string) => void): () 
 		const data = event instanceof CustomEvent ? event.detail : (event as MessageEvent).data;
 		if (data?.type !== NOTIFICATION_CLICK || typeof data.url !== "string") return;
 		try {
-			const url = isMobileRuntime() ? new URL(data.url, window.location.href) : new URL(data.url);
+			const url = new URL(data.url);
 			const localBase = new URL(appBase(), window.location.href);
 			if (url.origin !== localBase.origin || !url.pathname.startsWith(localBase.pathname)) return;
-			if (isMobileRuntime()) url.searchParams.delete("token");
 			onClick(url.href);
 		} catch {}
 	};
 	window.addEventListener(NOTIFICATION_CLICK, handle);
-	if (!isMobileRuntime()) navigator.serviceWorker?.addEventListener("message", handle);
+	navigator.serviceWorker?.addEventListener("message", handle);
 	return () => {
 		window.removeEventListener(NOTIFICATION_CLICK, handle);
-		if (!isMobileRuntime()) navigator.serviceWorker?.removeEventListener("message", handle);
+		navigator.serviceWorker?.removeEventListener("message", handle);
 	};
 }
 
@@ -44,18 +42,9 @@ const STORAGE_KEY = "pi-web-notify";
 const DEFAULT_NOTIFY_SETTINGS: NotifySettings = { enabled: false };
 
 export function loadNotifySettings(): NotifySettings {
-	const mobile = getMobileRuntime();
-	const mobileState = mobile?.pushAdapter?.getState();
-	const enabled = mobile ? (mobileState?.enabled ?? false) : undefined;
-	if (mobileState?.kinds) {
-		return {
-			enabled: mobileState.enabled,
-			events: Object.fromEntries(NOTIFY_EVENTS.map((kind) => [kind, mobileState.kinds!.includes(kind) ? "on" : "off"])),
-		};
-	}
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return { enabled: enabled ?? DEFAULT_NOTIFY_SETTINGS.enabled };
+		if (!raw) return { ...DEFAULT_NOTIFY_SETTINGS };
 		const parsed = JSON.parse(raw) as Partial<NotifySettings>;
 		const events: NonNullable<NotifySettings["events"]> = {};
 		for (const kind of NOTIFY_EVENTS) {
@@ -63,49 +52,26 @@ export function loadNotifySettings(): NotifySettings {
 			if (mode === "follow" || mode === "on" || mode === "off") events[kind] = mode;
 		}
 		return {
-			enabled: enabled ?? (typeof parsed.enabled === "boolean" ? parsed.enabled : DEFAULT_NOTIFY_SETTINGS.enabled),
+			enabled: typeof parsed.enabled === "boolean" ? parsed.enabled : DEFAULT_NOTIFY_SETTINGS.enabled,
 			events,
 		};
 	} catch {
-		return { enabled: enabled ?? DEFAULT_NOTIFY_SETTINGS.enabled };
+		return { ...DEFAULT_NOTIFY_SETTINGS };
 	}
-}
-
-export function subscribeNotificationState(listener: () => void): () => void {
-	return getMobileRuntime()?.pushAdapter?.subscribe(listener) ?? (() => {});
-}
-
-export async function syncMobileNotificationKinds(settings = loadNotifySettings()): Promise<void> {
-	const adapter = getMobileRuntime()?.pushAdapter;
-	if (!adapter?.setKinds) return;
-	const sound = loadSoundSettings();
-	const kinds = NOTIFY_EVENTS.filter((kind) => isNotifyEventEnabled(kind, { ...settings, enabled: true }, sound));
-	await adapter.setKinds(kinds);
 }
 
 export async function setNotificationsEnabled(enabled: boolean): Promise<boolean> {
 	const permission = enabled ? await requestNotificationPermission() : notificationPermission();
-	const next = enabled && permission === "granted";
-	const mobile = getMobileRuntime();
-	if (mobile) {
-		const adapter = mobile.pushAdapter;
-		if (!adapter) return false;
-		if (next) await syncMobileNotificationKinds();
-		await adapter.setEnabled(next);
-		return adapter.getState().enabled;
-	}
-	return next;
+	return enabled && permission === "granted";
 }
 
 export function saveNotifySettings(settings: NotifySettings): void {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 	} catch {}
-	void syncMobileNotificationKinds(settings).catch((error) => console.warn("Push event settings failed:", error));
 }
 
 export function notificationsSupported(): boolean {
-	if (isMobileRuntime()) return getMobileRuntime()?.pushAdapter?.getState().supported ?? false;
 	return typeof window !== "undefined" && "Notification" in window;
 }
 
@@ -113,7 +79,6 @@ type NotifyBlockReason = "insecure" | "unsupported";
 
 export function notifyBlockReason(): NotifyBlockReason | null {
 	if (notificationsSupported()) return null;
-	if (isMobileRuntime()) return "unsupported";
 	if (typeof window !== "undefined" && window.isSecureContext === false) return "insecure";
 	return "unsupported";
 }
@@ -202,13 +167,11 @@ export function currentPresence(): PresenceSignals {
 }
 
 export function notificationPermission(): NotificationPermission {
-	if (isMobileRuntime()) return getMobileRuntime()?.pushAdapter?.getState().permission ?? "denied";
 	if (!notificationsSupported()) return "denied";
 	return Notification.permission;
 }
 
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-	if (isMobileRuntime()) return getMobileRuntime()?.pushAdapter?.requestPermission() ?? "denied";
 	if (!notificationsSupported()) return "denied";
 	try {
 		return await Notification.requestPermission();
@@ -248,7 +211,6 @@ function notificationOptions(body?: string, sticky = false, sessionId?: string):
 }
 
 async function showNow(title: string, body?: string, sticky = false, sessionId?: string): Promise<NotifyAttempt> {
-	if (isMobileRuntime()) return { path: "none", error: "native push" };
 	if (!notificationsSupported()) return { path: "none", error: "unsupported" };
 	if (Notification.permission !== "granted") return { path: "none", error: `permission: ${Notification.permission}` };
 
@@ -285,7 +247,7 @@ export async function notify(
 	kind: SoundKind = "done",
 	sessionId?: string,
 ): Promise<void> {
-	if (isMobileRuntime() || !notificationsSupported()) return;
+	if (!notificationsSupported()) return;
 	if (shouldSuppressNotify(currentPresence())) return;
 	if (!isNotifyEventEnabled(kind, loadNotifySettings(), loadSoundSettings())) return;
 	await showNow(title, body, false, sessionId);
@@ -312,7 +274,6 @@ export async function sendTestNotification(title: string, body?: string): Promis
 		presence,
 		held: null as number | null,
 	};
-	if (isMobileRuntime()) return { ...base, path: "none", error: "native push" };
 	if (!base.supported) return { ...base, path: "none", error: "unsupported" };
 	let reg: ServiceWorkerRegistration | undefined;
 	try {

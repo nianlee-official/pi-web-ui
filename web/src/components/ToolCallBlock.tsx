@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { openImageLightbox } from "../image-lightbox-bridge";
-import { appResourceCrossOrigin, appResourceUrl } from "../base-url";
+import { appUrl } from "../base-url";
 import {
 	FiArchive,
 	FiArrowRight,
@@ -894,7 +894,7 @@ const ToolCallCard = memo(function ToolCallCard({
 				<div className="toolcall-images">
 					{resultImages.map((img, i) => {
 						const src = (img.dataUrl as string).startsWith("/")
-							? appResourceUrl(img.dataUrl as string)
+							? appUrl(img.dataUrl as string)
 							: (img.dataUrl as string);
 						return (
 							<button
@@ -908,13 +908,7 @@ const ToolCallCard = memo(function ToolCallCard({
 									openImageLightbox({ src, alt: `tool result image ${i + 1}` });
 								}}
 							>
-								<img
-									crossOrigin={appResourceCrossOrigin(src)}
-									src={src}
-									loading="lazy"
-									decoding="async"
-									alt={`tool result image ${i + 1}`}
-								/>
+								<img src={src} loading="lazy" decoding="async" alt={`tool result image ${i + 1}`} />
 							</button>
 						);
 					})}

@@ -1,5 +1,3 @@
-import { isMobileRuntime, type MobileNotifyKind } from "./mobile-runtime";
-
 export interface SoundSettings {
 	enabled: boolean;
 	question: boolean;
@@ -11,7 +9,7 @@ export interface SoundSettings {
 	volume: number;
 }
 
-export type SoundKind = MobileNotifyKind;
+export type SoundKind = "question" | "done" | "subagentDone" | "start" | "error" | "approval";
 
 const STORAGE_KEY = "pi-web-sounds";
 
@@ -53,7 +51,6 @@ export function saveSoundSettings(settings: SoundSettings): void {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 	} catch {}
-	if (isMobileRuntime() && typeof window !== "undefined") window.dispatchEvent(new Event("pi-web-ui:sound-settings"));
 }
 
 let ctx: AudioContext | null = null;

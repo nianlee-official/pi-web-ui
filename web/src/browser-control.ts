@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { BrowserHostBridge } from "../../browser/contracts";
 import type { DraftAttachment } from "./composer-draft";
-import { isDesktopShell } from "./desktop";
 
 export const PAGE_PICKER_ZIP_URL =
 	"https://github.com/xing-shuyin/pi-web-ui/releases/latest/download/page-picker-extension.zip";
@@ -13,17 +11,12 @@ export interface BrowserControlPage {
 	open: boolean;
 	/** 用户当前正在看的页面（同一时刻最多一个）。 */
 	active?: boolean;
-	tabId?: string;
-	url?: string;
 }
 
 export interface BrowserControlStatus {
 	available: boolean;
-	native?: boolean;
-	desktop?: boolean;
 	aiControl?: boolean;
 	allowEval?: boolean;
-	activeTabId?: string;
 	activeOrigin?: string;
 	pages: BrowserControlPage[];
 	error?: string;
@@ -38,14 +31,7 @@ interface HostBridge {
 	}) => Promise<{ ok: boolean; result?: unknown; error?: string }>;
 }
 
-function nativeHost(): BrowserHostBridge | undefined {
-	const bridge = (window as unknown as { __piBrowser?: BrowserHostBridge }).__piBrowser;
-	return bridge?.version === 1 && typeof bridge.pageCall === "function" ? bridge : undefined;
-}
-
 const host = (): HostBridge["pageCall"] | undefined => {
-	const native = nativeHost();
-	if (native) return (opts) => native.pageCall({ ...opts, timeoutMs: opts.timeoutMs ?? 30000 });
 	const bridge = (window as unknown as { __piWebUiHost?: HostBridge }).__piWebUiHost;
 	return bridge?.pageCall?.bind(bridge);
 };
@@ -63,14 +49,6 @@ export function pokeBrowserControl(): void {
 }
 
 export async function queryBrowserControl(): Promise<BrowserControlStatus> {
-	if (isDesktopShell() && !nativeHost()) {
-		return {
-			available: false,
-			pages: [],
-			desktop: true,
-			error: "此桌面版尚未提供原生浏览器桥：请升级到支持 AI Browser 的桌面版，或在系统浏览器中使用 page-picker 扩展",
-		};
-	}
 	const pageCall = host();
 	if (!pageCall) {
 		return {
@@ -85,10 +63,8 @@ export async function queryBrowserControl(): Promise<BrowserControlStatus> {
 		const value = (res.result ?? {}) as Record<string, unknown>;
 		const next: BrowserControlStatus = {
 			available: value.installed === true,
-			...(nativeHost() ? { native: true } : {}),
 			aiControl: value.aiControl === true,
 			allowEval: value.allowEval === true,
-			...(typeof value.activeTabId === "string" ? { activeTabId: value.activeTabId } : {}),
 			...(typeof value.activeOrigin === "string" ? { activeOrigin: value.activeOrigin } : {}),
 			pages: Array.isArray(value.pages) ? (value.pages as BrowserControlPage[]) : [],
 		};
@@ -106,13 +82,12 @@ export function compactPage(pages: BrowserControlPage[]): BrowserControlPage | n
 	return pages.length === 1 ? pages[0] : null;
 }
 
-export function pageCitation(page: { origin: string; title?: string; tabId?: string }): DraftAttachment {
-	const target = page.tabId ?? page.origin;
+export function pageCitation(page: { origin: string; title?: string }): DraftAttachment {
 	return {
-		path: target,
+		path: page.origin,
 		name: page.title?.trim() || page.origin,
 		mode: "page",
-		key: `page:${target}`,
+		key: `page:${page.origin}`,
 	};
 }
 

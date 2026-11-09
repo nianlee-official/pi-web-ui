@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { ServerResponse } from "node:http";
-import { nativeOrigin as isNativeOrigin, type NativeOrigin } from "./hub-auth.js";
 
 export const PATH_HTML_LIMIT = 2 * 1024 * 1024;
 export function parseDevicePath(value: string | undefined) {
@@ -19,22 +18,13 @@ export function parseDevicePath(value: string | undefined) {
 export function capabilityBase(id: string, token: string) {
 	return `/device/${id}/__relay/${token}/`;
 }
-export function nativeResourceContentType(path: string, method: string): "text/css" | "image/png" | undefined {
-	if (!["GET", "HEAD"].includes(method)) return undefined;
-	const pathname = path.split("?")[0];
-	if (/^\/themes\/(?:bases\/)?[A-Za-z0-9_-]+\.css$/.test(pathname)) return "text/css";
-	if (pathname === "/icons/icon-192.png") return "image/png";
-	return undefined;
-}
-export function portalHeaders(hub: URL, base: string, nativeOrigin?: NativeOrigin): Record<string, string> {
-	if (nativeOrigin !== undefined && !isNativeOrigin(nativeOrigin)) throw new Error("Invalid native origin");
+export function portalHeaders(hub: URL, base: string): Record<string, string> {
 	const http = hub.origin + base;
 	const ws = http.replace(/^http/, "ws");
 	return {
 		"cache-control": "no-store",
 		"referrer-policy": "no-referrer",
-		"access-control-allow-origin": nativeOrigin ?? "null",
-		...(nativeOrigin ? { vary: "Origin" } : {}),
+		"access-control-allow-origin": "null",
 		"access-control-allow-methods": "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS",
 		"access-control-allow-headers":
 			"content-type, authorization, x-requested-with, range, if-none-match, if-modified-since",
@@ -80,16 +70,8 @@ export function transformPortalHtml(html: string, base: string) {
 	const ready = `<script>(()=>{let ready=false,banner,disconnectedSince=0;const update=()=>{const root=document.getElementById('root'),status=document.querySelector('.status-conn');if(!ready&&((root&&root.childElementCount)||(!root&&document.readyState==='complete'))){ready=true;parent.postMessage({type:'device-portal-ready'},'*')}if(!ready||!status)return;if(!banner){banner=document.createElement('div');banner.setAttribute('role','status');banner.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483647;max-width:90vw;padding:8px 12px;border-radius:8px;background:#303137;color:#eee;font:13px system-ui;box-shadow:0 2px 12px #0006';banner.textContent='连接已断开，正在自动重试，请稍候… / Disconnected. Retrying automatically, please wait…';document.body.append(banner)}banner.hidden=status.classList.contains('ok');if(banner.hidden)disconnectedSince=0;else if(!disconnectedSince)disconnectedSince=Date.now();else if(Date.now()-disconnectedSince>6000){disconnectedSince=Infinity;parent.postMessage({type:'device-portal-disconnected'},'*')}};setInterval(update,200);update()})();</script>`;
 	return `<!doctype html><base href="${base}">` + content.replace(/<!doctype[^>]*>/i, "") + ready;
 }
-export function createPortalResponse(
-	res: ServerResponse,
-	hub: URL,
-	base: string,
-	root: boolean,
-	nativeOrigin?: NativeOrigin,
-	nativeContentType?: "text/css" | "image/png",
-) {
+export function createPortalResponse(res: ServerResponse, hub: URL, base: string, root: boolean) {
 	let buffered = false;
-	let discarded = false;
 	let status = 200;
 	let headers: Record<string, string> = {};
 	let chunks: Buffer[] = [];
@@ -122,19 +104,7 @@ export function createPortalResponse(
 					throw new Error("Unsafe portal redirect");
 				headers.location = base + location.slice(1);
 			}
-			Object.assign(headers, portalHeaders(hub, base, nativeOrigin));
-			const contentType = (headers["content-type"] || "").split(";")[0].trim().toLowerCase();
-			if (
-				nativeOrigin &&
-				(["text/html", "application/xhtml+xml"].includes(contentType) ||
-					/^(?:text|application)\/(?:x-)?(?:javascript|ecmascript|jscript|livescript)$/.test(contentType) ||
-					(nativeContentType !== undefined && contentType !== nativeContentType))
-			) {
-				discarded = true;
-				res.writeHead(415, { ...portalHeaders(hub, base, nativeOrigin), "content-type": "application/json" });
-				res.end(JSON.stringify({ error: "Native relay refuses this content type" }));
-				return;
-			}
+			Object.assign(headers, portalHeaders(hub, base));
 			buffered = root && /^(text\/html|application\/xhtml\+xml)\b/i.test(headers["content-type"] || "");
 			if (buffered) {
 				if (headers["content-encoding"] && headers["content-encoding"] !== "identity")
@@ -149,7 +119,6 @@ export function createPortalResponse(
 			}
 		},
 		write(data: Buffer) {
-			if (discarded) return;
 			if (!started) throw new Error("Missing portal headers");
 			if (!buffered) {
 				res.write(data);
@@ -160,7 +129,6 @@ export function createPortalResponse(
 			chunks.push(data);
 		},
 		end() {
-			if (discarded) return;
 			if (!started) throw new Error("Missing portal headers");
 			if (buffered) {
 				res.writeHead(status, headers);

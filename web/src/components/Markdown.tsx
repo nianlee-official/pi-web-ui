@@ -27,8 +27,6 @@ import { isZhLocale, useLocale } from "../i18n";
 import { PluginFenceBlock } from "./PluginFenceBlock";
 import { openFilePreview } from "../file-preview-bridge";
 import { openImageLightbox } from "../image-lightbox-bridge";
-import { appResourceCrossOrigin, appResourceUrl } from "../base-url";
-import { isMobileRuntime } from "../mobile-runtime";
 import { useAppField } from "../app-globals";
 import {
 	isExternalOrProtocolLink,
@@ -196,17 +194,9 @@ function MdImage({ node: _node, src, alt, ...rest }: JSX.IntrinsicElements["img"
 	const rawSrc = String(src ?? "");
 	const cwd = useAppField("cwd");
 	let effectiveSrc = rawSrc;
-	if (isMobileRuntime() && rawSrc.startsWith("/api/")) {
-		effectiveSrc = appResourceUrl(rawSrc);
-	} else if (
-		rawSrc &&
-		!isExternalOrProtocolLink(rawSrc) &&
-		!rawSrc.startsWith("data:") &&
-		!rawSrc.startsWith("blob:")
-	) {
+	if (rawSrc && !isExternalOrProtocolLink(rawSrc) && !rawSrc.startsWith("data:") && !rawSrc.startsWith("blob:")) {
 		effectiveSrc = resolveWorkspaceFileUrl(rawSrc, cwd);
 	}
-	if (appResourceCrossOrigin(effectiveSrc)) effectiveSrc = appResourceUrl(effectiveSrc);
 	return (
 		<button
 			type="button"
@@ -218,13 +208,7 @@ function MdImage({ node: _node, src, alt, ...rest }: JSX.IntrinsicElements["img"
 				openImageLightbox({ src: effectiveSrc, alt });
 			}}
 		>
-			<img
-				{...rest}
-				crossOrigin={appResourceCrossOrigin(effectiveSrc) ?? rest.crossOrigin}
-				src={effectiveSrc}
-				alt={alt}
-				loading="lazy"
-			/>
+			<img {...rest} src={effectiveSrc} alt={alt} loading="lazy" />
 		</button>
 	);
 }

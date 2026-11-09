@@ -240,7 +240,6 @@ export class PluginInstaller {
 			detached: process.platform !== "win32",
 			env: {
 				...process.env,
-				...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: "1" } : {}),
 				PI_WEB_DATA_DIR: this.deps.dataDir,
 				NO_COLOR: "1",
 			},

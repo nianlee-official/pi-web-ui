@@ -5,7 +5,7 @@
 ## macOS 准备与边界
 
 - 需要 macOS 12+ 与 Apple Command Line Tools（`xcode-select --install`）。首次调用通过系统 `xcrun swiftc` 编译随插件提供的源码，缓存到当前用户临时目录；不下载可执行程序。
-- 在「系统设置 → 隐私与安全性 → 辅助功能」允许启动服务的宿主（如 Terminal 或 Electron 桌面应用）；截图和 OCR 另需「屏幕录制」权限。授权后可能需要重启宿主。插件只检查权限，不主动弹出系统授权。
+- 在「系统设置 → 隐私与安全性 → 辅助功能」允许启动服务的终端或后台服务宿主；截图和 OCR 另需「屏幕录制」权限。授权后可能需要重启宿主。插件只检查权限，不主动弹出系统授权。
 - 控件查询使用 Accessibility，截图使用 CoreGraphics，离线 OCR 使用 Vision；窗口截图按实际像素缩放后换算屏幕逻辑坐标，支持 Retina。
 - `desktop_key` 支持 `cmd+c` / `command+c` / `meta+c`（映射 Command），`option` 映射 Alt；`ctrl` 保留 Control 语义。
 - 中文和 emoji 通过原生 Unicode 键盘事件输入，不改剪贴板。点击、输入、快捷键、滚动和拖拽会影响当前鼠标/键盘与焦点，**不是隔离后台桌面**；不承诺操作非当前 Space 或最小化应用。

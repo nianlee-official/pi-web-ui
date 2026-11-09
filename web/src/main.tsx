@@ -7,15 +7,12 @@ import "./styles.css";
 import "highlight.js/styles/github-dark.css";
 import { applyTheme, loadTheme } from "./theme";
 import { applyFavicon } from "./favicon-settings";
-import { setupDesktopWindowDecorations } from "./desktop";
 import { initAuthToken } from "./auth-token";
 import { installScrollbarGutterVar } from "./scrollbar-gutter";
 import { appBase } from "./base-url";
 import { installChunkRecovery } from "./chunk-recovery";
-import { isMobileRuntime } from "./mobile-runtime";
-import { syncMobileNotificationKinds } from "./notify";
 
-const recoverChunk = isMobileRuntime() ? () => false : installChunkRecovery(__BUILD_ID__);
+const recoverChunk = installChunkRecovery(__BUILD_ID__);
 
 class RootErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
 	override state: { error: Error | null } = { error: null };
@@ -91,14 +88,6 @@ class RootErrorBoundary extends Component<{ children: ReactNode }, { error: Erro
 
 initAuthToken();
 
-if (isMobileRuntime()) {
-	const syncKinds = () => {
-		void syncMobileNotificationKinds().catch((error) => console.warn("Push event settings failed:", error));
-	};
-	syncKinds();
-	window.addEventListener("pi-web-ui:sound-settings", syncKinds);
-}
-
 function renderApp() {
 	applyTheme(loadTheme());
 	createRoot(document.getElementById("root")!).render(
@@ -112,13 +101,12 @@ function renderApp() {
 	);
 }
 applyFavicon();
-setupDesktopWindowDecorations();
 installScrollbarGutterVar();
 
 if (opaquePortalEnvironment) void restorePortalTheme(window).then(renderApp);
 else renderApp();
 
-if (import.meta.env.PROD && !isMobileRuntime() && !opaquePortalEnvironment && "serviceWorker" in navigator) {
+if (import.meta.env.PROD && !opaquePortalEnvironment && "serviceWorker" in navigator) {
 	window.addEventListener("load", () => {
 		const base = appBase();
 		navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch((err) => {

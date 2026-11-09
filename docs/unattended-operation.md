@@ -204,5 +204,5 @@ await host.delivery.send({ channel: "qq", key, target, payload, classify: classi
 | 权限申请依赖弹窗   | `host.requestPermission` 无浏览器时一律 `false`（net/llm 两族）                      | 预置授权文件 / 启动参数，或首次 attach 时补申请           |
 
 更长期的方向是把「会话」从 `ClientSession`（属于连接）拆成 actor + 多 sink 订阅
-（conversation 是 actor，Web/QQ/推送/桌面壳都是订阅者），Web UI 退化为控制面。届时
+（conversation 是 actor，Web/QQ/推送都是订阅者），Web UI 退化为控制面。届时
 `chatFromPlugin` 的伪客户端寄生可以整个删掉。

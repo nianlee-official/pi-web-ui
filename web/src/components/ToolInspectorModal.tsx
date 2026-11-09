@@ -43,7 +43,7 @@ import {
 import { parsePresentArgs } from "../present-items";
 import { openFilePreview } from "../file-preview-bridge";
 import { parseFileMutationArgs } from "../file-diff";
-import { appResourceCrossOrigin, appResourceUrl } from "../base-url";
+import { appUrl } from "../base-url";
 import { PresentedFiles } from "./PresentedFiles";
 import { QuestionnaireCard } from "./QuestionnaireCard";
 import { CodemodeCard, DelegateBrief, TerminalCommand, ToolSearchDetails } from "./ToolCallBlock";
@@ -771,7 +771,7 @@ function ReadInspectorDialog({
 							{isImage && images && images.length > 0 ? (
 								<div className="read-image-viewport">
 									{images.map((img, i) => {
-										const src = img.startsWith("/") ? appResourceUrl(img) : img;
+										const src = img.startsWith("/") ? appUrl(img) : img;
 										return (
 											<div key={i} className="read-image-container">
 												<button
@@ -780,12 +780,7 @@ function ReadInspectorDialog({
 													title={t("toolImageZoom")}
 													onClick={() => openImageLightbox({ src, alt: targetPath || `Image ${i + 1}` })}
 												>
-													<img
-														crossOrigin={appResourceCrossOrigin(src)}
-														src={src}
-														alt={targetPath || `Image ${i + 1}`}
-														className="read-image-item"
-													/>
+													<img src={src} alt={targetPath || `Image ${i + 1}`} className="read-image-item" />
 												</button>
 											</div>
 										);
@@ -1268,7 +1263,7 @@ function GenericInspectorDialog({
 									</div>
 									<div className="tool-inspector-images">
 										{images.map((image, i) => {
-											const src = image.startsWith("/") ? appResourceUrl(image) : image;
+											const src = image.startsWith("/") ? appUrl(image) : image;
 											return (
 												<button
 													key={i}
@@ -1277,12 +1272,7 @@ function GenericInspectorDialog({
 													title={t("toolImageZoom")}
 													onClick={() => openImageLightbox({ src, alt: `output image ${i + 1}` })}
 												>
-													<img
-														crossOrigin={appResourceCrossOrigin(src)}
-														src={src}
-														alt={`output image ${i + 1}`}
-														loading="lazy"
-													/>
+													<img src={src} alt={`output image ${i + 1}`} loading="lazy" />
 												</button>
 											);
 										})}

@@ -189,7 +189,8 @@ afterEach(async () => {
 describe("native CLI conversations", () => {
 	it("persists the native session ID and consumes reliable events once across history reopening", async () => {
 		const cs = client();
-		cs.onNotificationEvent = vi.fn();
+		const events = () =>
+			cs.emit.mock.calls.map(([event]: [any]) => event).filter((event: any) => event.type === "native_cli_event");
 		expect(await cs.newCliChat({ preset: "claude", executable: process.execPath })).toBe(true);
 		const cli = cs.conv;
 		const sessionId = "12345678-1234-4123-8123-123456789abc";
@@ -200,12 +201,10 @@ describe("native CLI conversations", () => {
 		expect(cli.nativeCli.status.phase).toBe("working");
 		report({ type: "done", eventId: "turn-complete-1" });
 		report({ type: "done", eventId: "turn-complete-1" });
-		expect(cs.onNotificationEvent).toHaveBeenCalledTimes(1);
-		expect(cs.onNotificationEvent).toHaveBeenCalledWith(
-			expect.objectContaining({ kind: "done", sessionId: cli.session.sessionId, conversationId: cli.id }),
-		);
+		expect(events()).toHaveLength(1);
+		expect(events()[0]).toMatchObject({ kind: "done", sessionId: cli.session.sessionId, conversationId: cli.id });
 		report({ type: "done", eventId: "cancelled-turn", aborted: true });
-		expect(cs.onNotificationEvent).toHaveBeenCalledTimes(1);
+		expect(events()).toHaveLength(1);
 		report({ type: "error", code: "event_observer", message: "observer unavailable", eventId: "observer-generated" });
 		expect(cli.nativeCliBinding.lastEventId).toBe("cancelled-turn");
 		const restoredManager = SessionManager.open(cli.session.sessionFile);
@@ -221,7 +220,7 @@ describe("native CLI conversations", () => {
 		expect(preparations.at(-1).ref).toMatchObject({ key: binding.key, nativeId: sessionId });
 		expect(preparations.at(-1).ctx.lastEventId).toBe("cancelled-turn");
 		preparations.at(-1).ctx.onEvent({ type: "done", eventId: "turn-complete-1" });
-		expect(cs.onNotificationEvent).toHaveBeenCalledTimes(1);
+		expect(events()).toHaveLength(1);
 	});
 
 	it("keeps a persistent process on detach and reuses its binding when reconnecting", async () => {

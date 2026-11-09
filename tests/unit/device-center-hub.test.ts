@@ -554,6 +554,19 @@ describe("device center hub", () => {
 		expect((await request("/api/auth/logout", {}, alice)).status).toBe(200);
 		expect((await request("/api/me", undefined, alice)).status).toBe(401);
 	});
+	it("rejects a persisted app token when presented as a browser session cookie", async () => {
+		const { hub, request, register, dataDir } = await fixture();
+		const cookie = await register();
+		const account = (await request("/api/me", undefined, cookie)).body.account;
+		const token = `native.${"a".repeat(64)}`;
+		await hub.store.transact((draft) => {
+			draft.sessions.push({ hash: hashSecret(token), accountId: account.id, expiresAt: Date.now() + 60_000 });
+		});
+		const persisted = await readPersistedHub(dataDir);
+		expect(persisted.sessions.some((entry) => entry.hash === hashSecret(token))).toBe(true);
+		expect((await request("/api/me", undefined, cookie)).status).toBe(200);
+		expect((await request("/api/me", undefined, `__Host-device_hub=${token}`)).status).toBe(401);
+	});
 	it("allows setting device remark and reflects it in device listing", async () => {
 		const { request, register, pair } = await fixture();
 		const cookie = await register();

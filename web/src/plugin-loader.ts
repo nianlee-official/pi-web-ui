@@ -1,6 +1,5 @@
 import type { UiPluginInfo } from "./types";
 import { appUrl } from "./base-url";
-import { isMobileRuntime } from "./mobile-runtime";
 import { withPluginScopeAsync } from "./plugin-host";
 import { clearFooterStatusesOf } from "./footer-status";
 import { clearImageOcrProviders, syncImageOcrProviderOwners } from "./image-ocr-providers";
@@ -198,7 +197,6 @@ export function pluginEntryUrl(pluginId: string, epoch: number): string {
 export function createScopedImporter(importFn: (url: string) => Promise<unknown>) {
 	let gate: Promise<unknown> = Promise.resolve();
 	return (pluginId: string, url: string): Promise<unknown> => {
-		if (isMobileRuntime()) return Promise.reject(new Error("Remote plugin clients are unavailable in the native app"));
 		const run = gate.then(() => withPluginScopeAsync(pluginId, () => importFn(url)));
 		gate = run.then(
 			() => undefined,
@@ -215,7 +213,7 @@ export async function loadPluginBundleModule(
 	epoch: number,
 	options?: { retry?: boolean },
 ): Promise<PluginFileHandlerModule | null> {
-	if (isMobileRuntime() || !p.hasClient || p.error) return null;
+	if (!p.hasClient || p.error) return null;
 	if (options?.retry) retrySalt.set(p.id, (retrySalt.get(p.id) ?? 0) + 1);
 	try {
 		const mod = (await importPluginBundle(p.id, pluginEntryUrl(p.id, epoch))) as PluginFileHandlerModule & {
@@ -233,7 +231,6 @@ export async function loadPluginBundleModule(
 }
 
 async function loadOne(p: UiPluginInfo, epoch: number): Promise<boolean> {
-	if (isMobileRuntime()) return false;
 	try {
 		// @vite-ignore：URL 运行时才知道，Vite 不要试图打包它。
 		const mod = (await importPluginBundle(p.id, pluginEntryUrl(p.id, epoch))) as {
@@ -272,7 +269,6 @@ async function loadOne(p: UiPluginInfo, epoch: number): Promise<boolean> {
 }
 
 export async function ensurePluginViewLoaded(p: UiPluginInfo, epoch: number): Promise<boolean> {
-	if (isMobileRuntime()) return false;
 	if (loaded.has(p.id) || preloaded.has(p.id)) return true;
 	if (failed.has(p.id) || !p.hasClient) return false;
 	const ok = await loadOne(p, epoch);
@@ -281,7 +277,6 @@ export async function ensurePluginViewLoaded(p: UiPluginInfo, epoch: number): Pr
 }
 
 export async function syncPluginViews(plugins: UiPluginInfo[], epoch: number): Promise<void> {
-	if (isMobileRuntime()) return;
 	const nextActive = new Set(plugins.filter((plugin) => !plugin.error).map((plugin) => plugin.id));
 	// 停用 / 移除 / 激活失败的插件：把它在底栏内置槽留的文本清掉（否则会留一条僵尸状态）
 	if (activePluginIds) {

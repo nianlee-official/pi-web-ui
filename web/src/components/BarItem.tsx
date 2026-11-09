@@ -43,7 +43,6 @@ import { useFooterStatus } from "../footer-status";
 import { cacheMetrics, estimateStreamTokens, streamRate, trimRateSamples, type RateSample } from "../cache-stats";
 import { Dropdown, DropdownItem } from "./Dropdown";
 import { BrowserControl } from "./BrowserControl";
-import { isDesktopShell } from "../desktop";
 import { BROWSER_PAGE_TOOL_NAME } from "../../../server/tool-manager.js";
 import { EnginePicker } from "./EnginePicker";
 import { NativeCliCreateEntry } from "./NativeCliCreateModal";
@@ -662,7 +661,7 @@ export function BarItem({
 	}
 
 	if (id === "host:browser") {
-		if (!isDesktopShell() && chat.settings?.disabledAgentTools?.includes(BROWSER_PAGE_TOOL_NAME)) return null;
+		if (chat.settings?.disabledAgentTools?.includes(BROWSER_PAGE_TOOL_NAME)) return null;
 		return (
 			<span className="bar-item-wrap" onContextMenu={handleContextMenu} data-bar-item={id}>
 				<BrowserControl />

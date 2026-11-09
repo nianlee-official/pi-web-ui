@@ -1,7 +1,6 @@
 import { join, resolve } from "node:path";
 import { statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import type { MobileNotificationCallback } from "./mobile-notification-events.js";
 import { VERSION, getAgentDir, ModelRuntime, type AgentSession } from "@earendil-works/pi-coding-agent";
 import { ClientStateStore } from "./client-state.js";
 import { ClaimStore } from "./claim-store.js";
@@ -585,7 +584,6 @@ export class AgentService {
 	onToolEvent: ((ev: PluginToolEvent) => void) | undefined = undefined;
 	toolGuard: ToolGuardHook | undefined = undefined;
 	onRunEvent: ((ev: PluginRunEvent) => void) | undefined = undefined;
-	onNotificationEvent: MobileNotificationCallback | undefined = undefined;
 	onConversationChanged: (() => void) | undefined = undefined;
 	onClientModelChanged: ((snap: PluginConversationSnapshot) => void) | undefined = undefined;
 	pluginToolsProvider: ((cwd?: string) => PluginAgentTool[]) | undefined = undefined;
@@ -1710,7 +1708,6 @@ export class AgentService {
 					}
 					const creating = ClientSession.create(clientId, cwd, this.stateStore, {
 						...createOpts,
-						onNotificationEvent: (event) => this.onNotificationEvent?.(event),
 					}).finally(() => {
 						this.pending.delete(clientId);
 					});

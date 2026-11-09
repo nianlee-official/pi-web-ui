@@ -26,7 +26,7 @@ export const ALL_PAGES_TRIGGERS: ReadonlySet<string> = new Set(["p", "page", "pa
 
 export function mapPageHits(
 	providerLabel: string,
-	pages: { origin: string; title?: string; open?: boolean; tabId?: string; url?: string }[],
+	pages: { origin: string; title?: string; open?: boolean }[],
 	query: string,
 	limit = 10,
 ): AtHit[] {
@@ -47,7 +47,7 @@ export function mapPageHits(
 			title,
 			hint: p.origin,
 			text: rawTitle,
-			attachments: [{ path: p.tabId ?? p.origin, name: rawTitle, mode: "page" }],
+			attachments: [{ path: p.origin, name: rawTitle, mode: "page" }],
 		});
 		if (out.length >= Math.max(0, limit)) break;
 	}

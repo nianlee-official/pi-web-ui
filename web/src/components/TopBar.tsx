@@ -66,11 +66,8 @@ import { PluginManagerModal } from "./PluginManagerModal";
 import { LocaleModal } from "./LocaleModal";
 import { focusComposer } from "../composer-bridge";
 import { useFloatingPanel } from "../use-floating-panel";
-import { isDesktopShell } from "../desktop";
-import { desktopReleasesUrl, useDesktopUpdater } from "../desktop-updater";
 import { BarItem } from "./BarItem";
 import { EnginePicker } from "./EnginePicker";
-import { WindowControls } from "./WindowControls";
 import { NativeCliCreateEntry } from "./NativeCliCreateModal";
 
 const PI_CORE_ITEM: UpdateAllItem = {
@@ -475,8 +472,6 @@ export function TopBar({
 	const [langOpen, setLangOpen] = useState(false);
 	const [themeOpen, setThemeOpen] = useState(false);
 	const [updateOpen, setUpdateOpen] = useState(false);
-	const inDesktopShell = isDesktopShell();
-	const desktopUpdater = useDesktopUpdater();
 	const [localeModalOpen, setLocaleModalOpen] = useState(false);
 
 	const updateTermIdsRef = useRef<Set<string>>(new Set());
@@ -744,82 +739,6 @@ export function TopBar({
 			</div>
 		</div>
 	);
-	const renderDesktopUpdater = () => {
-		const manualUrl = desktopReleasesUrl(chat.update?.latest ?? desktopUpdater.version);
-		const manual = (
-			<a className="dd-refresh dd-more-link" href={manualUrl} target="_blank" rel="noreferrer noopener">
-				{t("updateDesktopManual")}
-			</a>
-		);
-		if (!desktopUpdater.bridge)
-			return (
-				<>
-					<div className="dd-note warn">{t("updateDesktopNoBridge")}</div>
-					{manual}
-				</>
-			);
-		switch (desktopUpdater.state) {
-			case "checking":
-				return (
-					<>
-						<div className="dd-note">{t("updateDesktopChecking")}</div>
-						{manual}
-					</>
-				);
-			case "available":
-				return (
-					<>
-						<div className="dd-note warn">
-							{t("updateDesktopAvailable", {
-								version: desktopUpdater.version ?? chat.update?.latest ?? "",
-							})}
-						</div>
-						<button type="button" className="dd-refresh accent" onClick={() => desktopUpdater.download()}>
-							{t("updateDesktopDownload")}
-						</button>
-						{manual}
-					</>
-				);
-			case "downloading":
-				return (
-					<>
-						<div className="dd-note">{t("updateDesktopDownloading", { n: desktopUpdater.percent })}</div>
-						{manual}
-					</>
-				);
-			case "downloaded":
-				return (
-					<>
-						<div className="dd-note ok">{t("updateDesktopDownloaded")}</div>
-						<button type="button" className="dd-refresh accent" onClick={() => desktopUpdater.quitAndInstall()}>
-							{t("updateDesktopInstall")}
-						</button>
-						{manual}
-					</>
-				);
-			case "up-to-date":
-				return <div className="dd-note ok">{t("upToDate")}</div>;
-			case "error":
-				return (
-					<>
-						<div className="dd-note warn">{t("updateDesktopError", { error: desktopUpdater.message ?? "" })}</div>
-						<button type="button" className="dd-refresh" onClick={() => desktopUpdater.check()}>
-							{t("updateDesktopCheck")}
-						</button>
-						{manual}
-					</>
-				);
-			default:
-				return (
-					<>
-						<button type="button" className="dd-refresh accent" onClick={() => desktopUpdater.check()}>
-							{t("updateDesktopCheck")}
-						</button>
-						{manual}
-					</>
-				);
-		}
-	};
 	const renderUpdateBody = () => (
 		<>
 			<div className="dd-update">
@@ -851,23 +770,19 @@ export function TopBar({
 							})}
 						</div>
 					)}
-				{chat.update && !chat.update.upToDate && chat.update.latest && !inDesktopShell && (
+				{chat.update && !chat.update.upToDate && chat.update.latest && (
 					<div className="dd-note">{t("updateTerminalHint")}</div>
-				)}
-				{chat.update && !chat.update.upToDate && chat.update.latest && inDesktopShell && (
-					<div className="dd-note">{t("updateDesktopNote")}</div>
 				)}
 			</div>
 			<div className="dd-actions">
 				<button type="button" className="dd-refresh" onClick={() => appSend({ type: "check_update" })}>
 					{chat.update === null ? t("checkingUpdate") : t("checkUpdate")}
 				</button>
-				{chat.update && !chat.update.upToDate && chat.update.latest && !inDesktopShell && (
+				{chat.update && !chat.update.upToDate && chat.update.latest && (
 					<button type="button" className="dd-refresh accent" onClick={runUpdate}>
 						{t("updateNow")}
 					</button>
 				)}
-				{chat.update && !chat.update.upToDate && chat.update.latest && inDesktopShell && renderDesktopUpdater()}
 				{service && (
 					<button
 						type="button"
@@ -1057,10 +972,9 @@ export function TopBar({
 				<span className="chip-sub">{t("searchGlobal")}</span>
 			</button>
 		),
-		"host:browser":
-			isDesktopShell() || !(chat.settings?.disabledAgentTools?.includes(BROWSER_PAGE_TOOL_NAME) ?? false) ? (
-				<BrowserControl />
-			) : null,
+		"host:browser": !(chat.settings?.disabledAgentTools?.includes(BROWSER_PAGE_TOOL_NAME) ?? false) ? (
+			<BrowserControl />
+		) : null,
 		"host:tasks": (
 			<button type="button" className="chip bg-task-chip" data-tip={t("bgTasksTip")} onClick={onOpenBgTasks}>
 				<FiLayers />
@@ -1376,7 +1290,7 @@ export function TopBar({
 	const flowItems: { id: string; entry: UiSlotEntry | null; node: ReactNode }[] = [];
 	for (const it of topEntries) {
 		if (it.id === "host:native-cli" || (it.id === "host:chat" && (view === "chat" || view === "native-cli"))) continue;
-		const isItemHidden = it.id === "host:browser" && isDesktopShell() ? false : it.entry?.hidden;
+		const isItemHidden = it.entry?.hidden;
 		if (isItemHidden) continue;
 		if (isTabGatedOff(it.id)) continue;
 		if (it.id === "host:worktrees" && !chat.state?.worktree) continue;
@@ -1490,7 +1404,7 @@ export function TopBar({
 			flow.clientWidth,
 			gap,
 			0,
-			new Set([...REQUIRED_TOPBAR_ITEM_IDS, "host:worktrees", ...(isDesktopShell() ? ["host:browser"] : [])]),
+			new Set([...REQUIRED_TOPBAR_ITEM_IDS, "host:worktrees"]),
 		);
 		setDroppedIds((prev) => (prev.size === next.size && [...next].every((id) => prev.has(id)) ? prev : next));
 	};
@@ -1658,8 +1572,6 @@ export function TopBar({
 			{mobileAsideItems.map((it) => (
 				<Fragment key={it.id}>{it.node}</Fragment>
 			))}
-
-			<WindowControls />
 
 			{localeModalOpen && <LocaleModal onClose={() => setLocaleModalOpen(false)} />}
 			{pluginMenuAnchor && (

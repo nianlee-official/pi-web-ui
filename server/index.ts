@@ -35,9 +35,6 @@ import { homedir } from "node:os";
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { registerTtsRoutes } from "./tts-routes.js";
 import express from "express";
-import { mobileCors, mobileOriginAuthorized } from "./mobile-origin.js";
-import { createMobilePushService } from "./mobile-push.js";
-import type { MobileNotificationEvent } from "./mobile-notification-events.js";
 import compression from "compression";
 import { WebSocket, WebSocketServer } from "ws";
 import { VERSION, getAgentDir } from "@earendil-works/pi-coding-agent";
@@ -301,8 +298,6 @@ if (process.platform === "win32") {
 
 const app = express();
 const deviceLanAccess = createDeviceLanAccess();
-const mobilePush = createMobilePushService({ dataDir: DATA_DIR });
-const mobileOriginOptions = { tokenConfigured: () => Boolean(AUTH_TOKEN), authorize: tokenOk };
 app.use((req, res, next) => {
 	const hostHeader = req.headers.host;
 	if (
@@ -317,7 +312,6 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
 	if (!deviceLanAccess.handleRequest(req, res)) next();
 });
-app.use(mobileCors(mobileOriginOptions));
 const superagentWebhookPaths = new Set(["/api/superagent/webhooks/github", "/api/superagent/webhooks/feishu"]);
 const isSuperagentWebhook = (req: { method?: string; url?: string }) =>
 	req.method === "POST" && superagentWebhookPaths.has((req.url ?? "").split("?")[0]);
@@ -532,7 +526,6 @@ app.use((req, res, next) => {
 		);
 });
 
-mobilePush.registerRoutes(app);
 registerTtsRoutes(app);
 
 const sharedStateStore = new ClientStateStore(join(DATA_DIR, "client-state.json"));
@@ -1139,8 +1132,7 @@ function originAllowed(req: IncomingMessage): boolean {
 	if (!origin) return true;
 	const o = origin.toLowerCase();
 	if (ALLOW_ORIGINS.includes(o)) return true;
-	if (mobileOriginAuthorized(req, mobileOriginOptions)) return true;
-	if (o === "null") return false;
+	if (!/^https?:\/\//.test(o)) return false;
 	const ori = parseAuthority(o.replace(/^[a-z]+:\/\//, ""));
 	if (ori.hostname === host.hostname && ori.port === host.port) return true;
 	return false;
@@ -1645,7 +1637,6 @@ export interface EngineService {
 	activeConversations(): number;
 	pendingMessages(): number;
 	applyPluginAgentTools(): void;
-	onNotificationEvent?: (event: MobileNotificationEvent) => void | Promise<void>;
 	refreshMcpProject?(cwd: string): void;
 	mcpProjectCwds?(): string[];
 	applyPluginCommandCatalog(): void;
@@ -2340,19 +2331,6 @@ const mcpProjects = new McpProjectRuntimeRegistry({
 ClientSession.mcpProjects = mcpProjects;
 pluginMgr.mcpProjects = mcpProjects;
 wireEngineHooks = (svc: EngineService) => {
-	svc.onNotificationEvent = async (event) => {
-		const results = await Promise.allSettled([
-			mobilePush.handleEvent(event),
-			deviceCenter.publishMobileNotification(event),
-		]);
-		for (const result of results) {
-			if (result.status === "rejected")
-				console.warn(
-					"[mobile-push] notification queue failed",
-					result.reason instanceof Error ? result.reason.message : "unknown error",
-				);
-		}
-	};
 	svc.onToolEvent = (ev) => pluginMgr.emitToolEvent(ev);
 	svc.toolGuard = {
 		pre: (req, lang) => pluginMgr.evaluateToolPre(req, lang),
@@ -3696,7 +3674,6 @@ async function shutdown(signal: "SIGINT" | "SIGTERM" = "SIGINT"): Promise<void> 
 		await mcpProjects.dispose();
 		await globalLspPool.shutdownAll();
 		await service.disposeAll();
-		await mobilePush.dispose();
 		for (const ws of wss.clients) {
 			try {
 				ws.terminate();

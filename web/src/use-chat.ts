@@ -10,7 +10,6 @@ import {
 } from "./terminal-bridge";
 import { withToken } from "./auth-token";
 import { appUrl, appWsUrl } from "./base-url";
-import { isMobileRuntime } from "./mobile-runtime";
 import { handleNativeCliEvent, resolveNativeCliControlResult } from "./native-cli-events";
 import { notifySessionSwitch } from "./composer-bridge";
 import { syncKnownInlineMarkers } from "./components/Message";
@@ -2214,7 +2213,7 @@ export function useChat() {
 				case "ready": {
 					const mine = typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "";
 					const autoReload = chatApi.current.chat.settings?.autoReload ?? true;
-					if (!isMobileRuntime() && autoReload && msg.buildId && mine && msg.buildId !== mine) {
+					if (autoReload && msg.buildId && mine && msg.buildId !== mine) {
 						const key = `pi-web-ui-reloaded-${msg.buildId}`;
 						if (!sessionStorage.getItem(key)) {
 							sessionStorage.setItem(key, "1");

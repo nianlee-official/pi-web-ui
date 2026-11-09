@@ -101,7 +101,6 @@ function DesktopWindow({ access }: { access: DesktopAccess }) {
 		}
 	}
 	const title = zh ? "远程桌面" : "Remote desktop";
-	const shell = !!(window as unknown as { piDesktop?: { openHub?: unknown } }).piDesktop?.openHub;
 	return createPortal(
 		<div
 			className={`remote-desktop-window${fullscreen ? " is-fullscreen" : ""}${minimized ? " is-minimized" : ""}`}
@@ -124,7 +123,7 @@ function DesktopWindow({ access }: { access: DesktopAccess }) {
 					{transport === "lan" ? (zh ? " · 局域网" : " · LAN") : ""}
 				</strong>
 				<button type="button" className="btn" disabled={busy} onClick={() => void detach()}>
-					{shell ? (zh ? "独立窗口" : "Separate window") : zh ? "独立标签页" : "Separate tab"}
+					{zh ? "独立标签页" : "Separate tab"}
 				</button>
 				<button
 					type="button"

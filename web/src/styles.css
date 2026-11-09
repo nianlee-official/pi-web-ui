@@ -9315,99 +9315,6 @@
 		--topbar-ctl-h: 28px;
 	}
 
-	body.is-desktop .topbar {
-		-webkit-app-region: no-drag;
-		user-select: none;
-	}
-
-	body.is-desktop .topbar .tb-spacer {
-		-webkit-app-region: drag;
-	}
-
-	/* 整条 topbar-flow 自身可拖窗：窄分栏（手机视图）会把 .tb-spacer 收成 display: contents，
-	   没有盒子=没有拖拽区，靠 spacer 供拖拽会让整个头部拖不动窗。
-	   交互条目由下面的 no-drag 规则逐条挖洞。 */
-	body.is-desktop .topbar-flow {
-		-webkit-app-region: drag;
-	}
-
-	body.is-desktop .topbar button,
-	body.is-desktop .topbar input,
-	body.is-desktop .topbar select,
-	body.is-desktop .topbar textarea,
-	body.is-desktop .topbar a,
-	body.is-desktop .topbar .chip,
-	body.is-desktop .topbar .dropdown,
-	body.is-desktop .topbar .dropdown-menu,
-	body.is-desktop .topbar .panel-toggle,
-	body.is-desktop .topbar .bar-item,
-	body.is-desktop .topbar .bar-item-wrap,
-	body.is-desktop .topbar .tb-tab,
-	body.is-desktop .topbar .plugin-topbar-item,
-	body.is-desktop .topbar .topbar-flow > *:not(.tb-spacer),
-	body.is-desktop .topbar .brand {
-		-webkit-app-region: no-drag;
-	}
-
-	body.is-desktop-mac:not(.is-desktop-fullscreen) .topbar {
-		padding-left: 78px;
-	}
-
-	.window-controls {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		margin-left: 4px;
-		flex-shrink: 0;
-		-webkit-app-region: no-drag;
-	}
-
-	.win-ctrl-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: var(--topbar-ctl-h, 28px);
-		height: var(--topbar-ctl-h, 28px);
-		padding: 0;
-		border: 1px solid transparent;
-		border-radius: 8px;
-		background: transparent;
-		color: var(--text-dim);
-		cursor: pointer;
-		transition:
-			border-color 0.15s ease,
-			background 0.15s ease,
-			color 0.15s ease,
-			transform 0.1s ease;
-		-webkit-app-region: no-drag;
-	}
-
-	.win-ctrl-btn:hover {
-		border-color: transparent;
-		background: var(--bg-elev2);
-		color: var(--text);
-	}
-
-	.win-ctrl-btn:active {
-		transform: scale(0.95);
-	}
-
-	.topbar.no-labels .win-ctrl-btn {
-		border-radius: 50%;
-	}
-
-	.win-ctrl-btn.win-ctrl-close:hover {
-		border-color: transparent;
-		background: color-mix(in srgb, var(--red) 18%, transparent);
-		color: var(--red);
-	}
-
-	.win-ctrl-btn.win-ctrl-close:active {
-		border-color: transparent;
-		background: #ef4444;
-		color: #ffffff;
-	}
-
 	.topbar-flow {
 		display: flex;
 		align-items: center;
@@ -10681,7 +10588,7 @@
 /* 顶栏所有控件统一裸幽灵化（chip / tab / bar-item / 插件按钮 / 抽屉开关 / 窗口控制等）：
  * 无论插件、内置还是沙盒，常态与悬停均表现完全一致：统一高度、圆角、内边距与无边框透明底，
  * 默认文字与图标统一为白色（var(--text)）。既然有了悬浮背景色（var(--bg-elev2)），悬浮时图标文字颜色保持白色不变。 */
-.topbar button:not(.win-ctrl-close),
+.topbar button,
 .topbar a.chip,
 .topbar [role="button"],
 .topbar [role="tab"]:not(.active):not([aria-selected="true"]),
@@ -10704,7 +10611,7 @@
 		box-shadow: none;
 	}
 
-	.topbar button:not(.win-ctrl-close):hover,
+	.topbar button:hover,
 	.topbar a.chip:hover,
 	.topbar [role="button"]:hover,
 	.topbar [role="tab"]:not(.active):not([aria-selected="true"]):hover,
@@ -37155,75 +37062,4 @@
 	.quick-ask-settings-textarea {
 		font-size: 16px;
 	}
-}
-
-/* 桌面端分栏协作拖动分割线 (Desktop Split Resizer) */
-.desktop-split-resizer {
-	position: fixed;
-	top: 0;
-	bottom: 0;
-	right: 0;
-	width: 6px;
-	z-index: 9999;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: col-resize;
-	user-select: none;
-	background: transparent;
-	transition: background 0.15s ease;
-}
-
-.desktop-split-resizer:hover,
-.desktop-split-resizer.dragging {
-	background: rgba(91, 140, 255, 0.12);
-}
-
-.desktop-split-resizer-line {
-	width: 2px;
-	height: 100%;
-	background: var(--border, #2a2c33);
-	transition: all 0.15s ease;
-}
-
-.desktop-split-resizer:hover .desktop-split-resizer-line,
-.desktop-split-resizer.dragging .desktop-split-resizer-line {
-	background: var(--accent, #5b8cff);
-	box-shadow: 0 0 8px rgba(91, 140, 255, 0.8);
-}
-
-.desktop-split-resizer.snap-agent .desktop-split-resizer-line,
-.desktop-split-resizer.snap-browser .desktop-split-resizer-line {
-	background: var(--red, #ef4444);
-	box-shadow: 0 0 10px rgba(239, 68, 68, 0.9);
-}
-
-.desktop-split-resizer-badge {
-	position: absolute;
-	top: 50%;
-	right: 14px;
-	transform: translateY(-50%);
-	padding: 6px 12px;
-	border-radius: 8px;
-	background: rgba(20, 22, 28, 0.94);
-	border: 1px solid rgba(255, 255, 255, 0.14);
-	color: #e6e8ee;
-	font-size: 12px;
-	white-space: nowrap;
-	pointer-events: none;
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-	backdrop-filter: blur(8px);
-}
-
-.desktop-split-resizer.snap-agent .desktop-split-resizer-badge,
-.desktop-split-resizer.snap-browser .desktop-split-resizer-badge {
-	color: var(--on-red, #ffffff);
-	border-color: rgba(239, 68, 68, 0.5);
-	background: rgba(45, 15, 18, 0.94);
-	box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
-}
-
-.desktop-is-resizing {
-	cursor: col-resize;
-	user-select: none;
 }

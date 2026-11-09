@@ -215,7 +215,7 @@ describe("工具 schema 脱水（只留字段名与类型，说明归唯一归�
 			edit: { soft: "Ignore leading whitespace/indentation per line" },
 			write: {},
 			ask_user_question: {},
-			browser_page: { op: expect.any(String), target: "Origin URL or native tabId" } as never,
+			browser_page: { op: expect.any(String), target: "Authorized page origin URL" } as never,
 			claim_files: {},
 			present_files: { "items.focus": "Open preview dialog immediately" },
 			skill: { name: "Skill name (omit to list catalog)" },
@@ -267,7 +267,7 @@ describe("工具 schema 脱水（只留字段名与类型，说明归唯一归�
 		expect(tools.edit.description).toBe("Replace unique oldText with newText in a file. Non-overlapping edits only.");
 		expect(tools.write.description).toBe("Write or overwrite file content (auto-creates parent dirs).");
 		expect(tools.ask_user_question.description).toBe("Ask the user 1-3 questions via interactive dialog.");
-		expect(tools.browser_page.description).toBe("Read or act on AI Browser tabs or page-picker.");
+		expect(tools.browser_page.description).toBe("Read or act on authorized browser pages through page-picker.");
 		expect(tools.claim_files.description).toBe(
 			"Advisory file reservation for parallel runs (auto-releases on run end).",
 		);

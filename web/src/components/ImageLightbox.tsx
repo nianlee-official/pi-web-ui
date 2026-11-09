@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { appResourceCrossOrigin } from "../base-url";
 import { createPortal } from "react-dom";
 import {
 	FiCheck,
@@ -423,7 +422,6 @@ export function ImageLightbox({ src, alt, onClose, onSaveAnnotation, actions, co
 						</div>
 						<div className={`img-lightbox-image${zoom !== null ? " img-lightbox-image-zoomed" : ""}`}>
 							<img
-								crossOrigin={appResourceCrossOrigin(previewSrc)}
 								key={previewSrc}
 								ref={image}
 								src={previewSrc}

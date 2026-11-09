@@ -39,7 +39,7 @@ import { TextQuoteCard } from "./TextQuoteCard";
 import { Markdown, PluginWidgetBlock } from "./Markdown";
 import { StreamMarkdown } from "./StreamMarkdown";
 import { CollapsibleHead } from "./CollapsibleHead";
-import { appResourceCrossOrigin, appResourceUrl } from "../base-url";
+import { appUrl } from "../base-url";
 import type { EditPromptAttachment } from "../question-attachments";
 import { ThinkingBlock } from "./ThinkingBlock";
 import { ToolCallBlock, type ToolView } from "./ToolCallBlock";
@@ -498,7 +498,7 @@ export const Message = memo(function Message({
 			const restored = await Promise.all(
 				attachments.map(async ({ imageUrl, ...att }) => {
 					if (!imageUrl) return att;
-					const response = await fetch(appResourceUrl(imageUrl));
+					const response = await fetch(appUrl(imageUrl));
 					if (!response.ok) throw new Error(`Image load failed: ${response.status}`);
 					const blob = await response.blob();
 					const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -1150,7 +1150,7 @@ export const Message = memo(function Message({
 									const kind = editAttKind(att);
 									const imageUrl = (att as EditPromptAttachment).imageUrl;
 									const imageSrc = imageUrl
-										? appResourceUrl(imageUrl)
+										? appUrl(imageUrl)
 										: `data:${att.mimeType ?? "image/png"};base64,${att.imageData}`;
 									return (
 										<span
@@ -1160,7 +1160,6 @@ export const Message = memo(function Message({
 										>
 											{kind === "image" ? (
 												<img
-													crossOrigin={appResourceCrossOrigin(imageSrc)}
 													src={imageSrc}
 													alt={att.name}
 													className="msg-editor-img-clickable"
@@ -1289,18 +1288,18 @@ export const Message = memo(function Message({
 								{messageAttachments.map((att, i) => {
 									let previewImgSrc: string | undefined;
 									if (att.url) {
-										previewImgSrc = att.url.startsWith("/") ? appResourceUrl(att.url) : att.url;
+										previewImgSrc = att.url.startsWith("/") ? appUrl(att.url) : att.url;
 									} else if (att.type === "image" || att.type === "vision-bridge") {
 										const match = questionAttachments?.find(
 											(qa) => qa.name === att.name || qa.imageData || (qa as EditPromptAttachment).imageUrl,
 										) as EditPromptAttachment | undefined;
-										if (match?.imageUrl) previewImgSrc = appResourceUrl(match.imageUrl);
+										if (match?.imageUrl) previewImgSrc = appUrl(match.imageUrl);
 										else if (match?.imageData)
 											previewImgSrc = `data:${match.mimeType ?? "image/png"};base64,${match.imageData}`;
 										else {
 											const imgB = message.content.find((b) => b.type === "image") as { dataUrl?: string } | undefined;
 											if (imgB?.dataUrl)
-												previewImgSrc = imgB.dataUrl.startsWith("/") ? appResourceUrl(imgB.dataUrl) : imgB.dataUrl;
+												previewImgSrc = imgB.dataUrl.startsWith("/") ? appUrl(imgB.dataUrl) : imgB.dataUrl;
 										}
 									}
 									const hasPath = Boolean(
@@ -1585,7 +1584,7 @@ function AttachmentCard({ message, forceOpen = false }: { message: UiMessage; fo
 				(() => {
 					const imgSrc = image?.dataUrl
 						? image.dataUrl.startsWith("/")
-							? appResourceUrl(image.dataUrl)
+							? appUrl(image.dataUrl)
 							: image.dataUrl
 						: undefined;
 					return isBridged ? (
@@ -1594,7 +1593,6 @@ function AttachmentCard({ message, forceOpen = false }: { message: UiMessage; fo
 							{imgSrc && (
 								<div className="attachcard-image">
 									<img
-										crossOrigin={appResourceCrossOrigin(imgSrc)}
 										src={imgSrc}
 										loading="lazy"
 										decoding="async"
@@ -1610,7 +1608,6 @@ function AttachmentCard({ message, forceOpen = false }: { message: UiMessage; fo
 					) : imgSrc ? (
 						<div className="attachcard-image">
 							<img
-								crossOrigin={appResourceCrossOrigin(imgSrc)}
 								src={imgSrc}
 								loading="lazy"
 								decoding="async"
@@ -2042,11 +2039,10 @@ function Block({
 
 	const image = asImage(block);
 	if (image && image.dataUrl) {
-		const src = image.dataUrl.startsWith("/") ? appResourceUrl(image.dataUrl) : image.dataUrl;
+		const src = image.dataUrl.startsWith("/") ? appUrl(image.dataUrl) : image.dataUrl;
 		return (
 			<div className="msg-image">
 				<img
-					crossOrigin={appResourceCrossOrigin(src)}
 					src={src}
 					loading="lazy"
 					decoding="async"

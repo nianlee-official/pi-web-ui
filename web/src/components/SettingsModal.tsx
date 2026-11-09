@@ -22,7 +22,6 @@ import {
 	FiHelpCircle,
 	FiKey,
 	FiMessageSquare,
-	FiMonitor,
 	FiPackage,
 	FiPlus,
 	FiRefreshCw,
@@ -54,8 +53,6 @@ import { PluginSettingsForm } from "./PluginSettingsForm";
 import { ToolPromptEditor } from "./ToolPromptEditor";
 import { McpServersPanel } from "./McpServersPanel";
 import { DeviceExecutionSettings } from "./DeviceExecutionSettings";
-import { DesktopAppSettings } from "./DesktopAppSettings";
-import { isDesktopShell } from "../desktop";
 import { excludeBuiltinModules, isBuiltinModule } from "../../../server/builtin-modules";
 import { SKILL_MARKETS, type SkillMarketCategory } from "../skill-catalog";
 import { SUPPORTED_ENGINES } from "./EnginePicker";
@@ -570,7 +567,6 @@ type SettingsTab =
 	| "dsh-presets"
 	| "subagent-templates"
 	| "device-collab"
-	| "desktop"
 	| `plugin-page:${string}`;
 
 interface SettingsPatch extends QuickAskPatch {
@@ -1151,8 +1147,6 @@ function LoadedSettingsModal({
 	const hasBuiltinPluginUpdate = Object.values(pluginUpdates ?? {}).some((u) => u.updatable && (u.builtin ?? false));
 	const hasAnyPluginUpdate = Object.values(pluginUpdates ?? {}).some((u) => u.updatable);
 
-	const inDesktopShell = isDesktopShell();
-
 	const tabs: {
 		id: SettingsTab;
 		icon: React.ReactNode;
@@ -1285,16 +1279,6 @@ function LoadedSettingsModal({
 						icon: <FiShare2 />,
 						label: t("settingsDeviceCollab"),
 						hint: t("settingsDeviceCollabHint"),
-					},
-				]
-			: []),
-		...(inDesktopShell
-			? [
-					{
-						id: "desktop" as const,
-						icon: <FiMonitor />,
-						label: t("settingsDesktopApp"),
-						hint: t("settingsStartupModeHint"),
 					},
 				]
 			: []),
@@ -7205,8 +7189,6 @@ function LoadedSettingsModal({
 						)}
 
 						{tab === "device-collab" && isPi && <DeviceExecutionSettings onNotice={() => triggerSyncState()} />}
-
-						{tab === "desktop" && inDesktopShell && <DesktopAppSettings />}
 
 						{tab === "approval-rules" && !isDsh && (
 							<div className="set-section">

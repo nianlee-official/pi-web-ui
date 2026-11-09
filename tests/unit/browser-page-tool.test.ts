@@ -84,14 +84,14 @@ describe("makeBrowserPageTool 工具定义", () => {
 		expect(guidelines).toContain("browser_page");
 	});
 
-	it("提示词同时支持原生标签页和扩展，每个 op 只在一处声明", () => {
+	it("提示词通过扩展操作已授权页面，每个 op 只在一处声明", () => {
 		const tool = makeBrowserPageTool(mockSession(async () => ({ ok: true })));
-		expect(tool.description).toContain("AI Browser");
+		expect(tool.description).toContain("authorized browser pages");
 		expect(tool.description).toContain("page-picker");
 		expect(BROWSER_PAGE_OP_SIGNATURE).toContain("snapshot");
 		expect(tool.description).not.toContain("snapshot");
 		expect((tool.promptGuidelines ?? []).join("\n")).toContain("active:true");
-		expect((tool.promptGuidelines ?? []).join("\n")).toContain("tabId");
+		expect((tool.promptGuidelines ?? []).join("\n")).toContain("origin as target");
 	});
 
 	it("execute 只把已提供的参数收进 args，并带上 op/target/timeoutMs", async () => {

@@ -6,7 +6,7 @@
 [![Node.js](https://img.shields.io/node/v/pi-web-ui?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-pi-web-ui 是面向 AI 程式開發代理的 Web 工作台，將對話、檔案、終端機與 Git 放在同一個介面。它基於 [pi coding agent](https://github.com/badlogic/pi-mono)，支援在瀏覽器中使用，也提供 Electron 桌面版與 Windows 可攜版。
+pi-web-ui 是面向 AI 程式開發代理的 Web 工作台，將對話、檔案、終端機與 Git 放在同一個介面。它基於 [pi coding agent](https://github.com/badlogic/pi-mono)，支援在瀏覽器中使用。
 
 **[官方網站](https://xing-shuyin.github.io/pi-web-ui-site/)** · **[文件中心](https://xing-shuyin.github.io/pi-web-ui-site/docs.html)** · [下載發行版](https://github.com/xing-shuyin/pi-web-ui/releases/latest) · [更新紀錄](CHANGELOG.md)
 
@@ -42,17 +42,13 @@ npx --allow-scripts=node-pty,@google/genai,protobufjs pi-web-ui@latest
 
 ## 選擇安裝方式
 
-| 方式              | 適用情境                   | 入口與說明                                                                                                            |
-| ----------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| npm 全域安裝      | 經常使用 CLI、管理背景服務 | `npm install -g pi-web-ui@latest`                                                                                     |
-| npx               | 快速試用、按需啟動         | `npx pi-web-ui@latest`；仍會使用 npm 快取與應用程式資料目錄                                                           |
-| Electron 桌面版   | 獨立桌面視窗               | [Releases](https://github.com/xing-shuyin/pi-web-ui/releases/latest)：按系統與架構選安裝包；啟動應用程式無需另裝 Node |
-| Windows 可攜版    | 解壓縮後使用、攜帶設定     | 同一 Releases 頁選擇 portable zip；解壓縮後執行 `启动Pi.bat` / `PiPortable.bat`，設定與工作區放在可攜目錄中           |
-| Docker 原始碼建置 | 容器部署                   | 使用儲存庫的 `docker-compose.yml`，見下方步驟                                                                         |
-| 原始碼執行        | 開發或自行建置             | `npm ci` → `npm run build` → `npm start`                                                                              |
-| Android / Termux  | 手機本機執行               | 按[安裝指南的 Termux 一節](https://xing-shuyin.github.io/pi-web-ui-site/docs.html#termux-install)準備原生建置環境     |
-
-桌面安裝包、可攜包的具體平台與架構以該次 Release 附件為準。桌面應用程式中的外掛安裝和外部命令仍可能需要 Node/npm、Git 等工具；可攜版也可能使用系統網路、快取或外部工具。
+| 方式              | 適用情境                   | 入口與說明                                                                                                        |
+| ----------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| npm 全域安裝      | 經常使用 CLI、管理背景服務 | `npm install -g pi-web-ui@latest`                                                                                 |
+| npx               | 快速試用、按需啟動         | `npx pi-web-ui@latest`；仍會使用 npm 快取與應用程式資料目錄                                                       |
+| Docker 原始碼建置 | 容器部署                   | 使用儲存庫的 `docker-compose.yml`，見下方步驟                                                                     |
+| 原始碼執行        | 開發或自行建置             | `npm ci` → `npm run build` → `npm start`                                                                          |
+| Android / Termux  | 手機本機執行               | 按[安裝指南的 Termux 一節](https://xing-shuyin.github.io/pi-web-ui-site/docs.html#termux-install)準備原生建置環境 |
 
 ## 前景執行與背景服務
 
@@ -164,7 +160,7 @@ npm install -g pi-web-ui@latest
 pi-web-ui server restart  # 已安裝服務時執行；前景程序自行重新啟動
 ```
 
-桌面與可攜版請依對應套件的更新方式操作，保留實際資料目錄。移除前備份需要的對話、設定與憑證；npm 使用者先解除安裝服務，再執行 `npm uninstall -g pi-web-ui`。移除套件不會刪除另外儲存的使用者資料。
+移除前備份需要的對話、設定與憑證；npm 使用者先解除安裝服務，再執行 `npm uninstall -g pi-web-ui`。移除套件不會刪除另外儲存的使用者資料。
 
 ## 可以做什麼
 
@@ -213,7 +209,7 @@ npm run build
 npm start
 ```
 
-原始碼執行預設連接埠為 `8787`，`npm start` 不自動開啟瀏覽器。開發規範、測試與架構入口見 [AGENTS.md](AGENTS.md) 和[開發指南](docs/development.md)；桌面開發見 [desktop/README.md](desktop/README.md)。
+原始碼執行預設連接埠為 `8787`，`npm start` 不自動開啟瀏覽器。開發規範、測試與架構入口見 [AGENTS.md](AGENTS.md) 和[開發指南](docs/development.md)。
 
 歡迎透過 [Issues](https://github.com/xing-shuyin/pi-web-ui/issues) 回報問題或提出需求，透過 Pull Request 提交改進。回報問題時請附版本、系統、安裝方式、重現步驟與移除敏感資訊的日誌。
 

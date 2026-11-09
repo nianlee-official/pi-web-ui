@@ -132,7 +132,7 @@ export function buildPluginDevText(inputs: PromptComposerInputs, lang: ServerLan
 			"  1. manifest.json（定义 id, name, version, capabilities, permissions, ui 贡献点）",
 			'  2. index.mjs（服务端入口：import { definePlugin } from "./sdk/index.mjs"; export default definePlugin({ async activate(host) { ... } })）',
 			'  3. client/entry.mjs（若声明了界面视图：import { defineView } from "./sdk/index.mjs"; export default defineView({ mount(el, ctx) { ... } })）',
-			"- 生成脚手架：若环境有 pi-web-ui CLI 可运行 `pi-web-ui plugin create <id> --template <minimal|ui-slot|agent-tool|renderer>`；若无 CLI（如桌面端）请直接用 write 在目标目录写入上述文件结构并从 SDK 复制必要模块",
+			"- 生成脚手架：运行 `pi-web-ui plugin create <id> --template <minimal|ui-slot|agent-tool|renderer>`；若无 CLI，请直接用 write 在目标目录写入上述文件结构并从 SDK 复制必要模块",
 			"- 生效方式：写入文件后，提示用户在「设置 - 插件」面板点击重扫刷新，或重启应用即可加载新插件",
 		].join("\n");
 	}

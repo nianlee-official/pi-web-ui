@@ -44,12 +44,17 @@ it("expands members independently from opening the group chat", async () => {
 		act(() => root.unmount());
 		host.remove();
 		window.removeEventListener("pi-web-ui:device-group-open", navigate);
+		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	}
 });
 it("opens member devices by hosting device ID and selects the requested view", async () => {
-	const openHub = vi.fn(async (_url: string) => true);
-	vi.stubGlobal("piDesktop", { openHub });
+	const replace = vi.fn();
+	const popup = vi.spyOn(window, "open").mockReturnValue({
+		opener: null,
+		location: { replace },
+		close: vi.fn(),
+	} as unknown as Window);
 	const fetchMock = vi.fn(async (raw: unknown, options?: RequestInit) => ({
 		ok: true,
 		json: async () =>
@@ -88,7 +93,8 @@ it("opens member devices by hosting device ID and selects the requested view", a
 		const buttons = host.querySelectorAll<HTMLButtonElement>("button");
 		await act(async () => buttons[0].click());
 		await act(async () => buttons[1].click());
-		expect(openHub.mock.calls.map(([url]) => url)).toEqual(["https://hub.example.com/device/mac/__open?ticket=one"]);
+		expect(popup).toHaveBeenCalledOnce();
+		expect(replace).toHaveBeenCalledWith("https://hub.example.com/device/mac/__open?ticket=one");
 		expect(getDesktopAccess()?.url).toBe("https://hub.example.com/device/mac/__open?ticket=one&next=%2Fdesktop");
 		closeDesktopAccess(getDesktopAccess()!);
 		expect(
@@ -99,6 +105,7 @@ it("opens member devices by hosting device ID and selects the requested view", a
 	} finally {
 		act(() => root.unmount());
 		host.remove();
+		popup.mockRestore();
 		vi.unstubAllGlobals();
 	}
 });

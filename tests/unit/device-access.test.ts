@@ -61,7 +61,7 @@ it("keeps a sandboxed desktop alive through outside clicks, minimize, and fullsc
 	await click("Close");
 	expect(document.querySelector("iframe")).toBeNull();
 });
-it("retains the floating window on blocked popups and bridge failures, closes only after success", async () => {
+it("retains the floating window when a separate tab is blocked", async () => {
 	ticket();
 	await mount();
 	const access = getDesktopAccess();
@@ -73,14 +73,6 @@ it("retains the floating window on blocked popups and bridge failures, closes on
 	await act(async () => detach().click());
 	expect(getDesktopAccess()).toBe(access);
 	expect(document.querySelector('[role="alert"]')?.textContent).toContain("Allow popups");
-	const openHub = vi.fn(async () => false);
-	vi.stubGlobal("piDesktop", { openHub });
-	await act(async () => detach().click());
-	expect(getDesktopAccess()).toBe(access);
-	openHub.mockResolvedValue(true);
-	await act(async () => detach().click());
-	expect(getDesktopAccess()).toBeNull();
-	expect(openHub).toHaveBeenCalledWith(`${hub}/device/mac/__open?ticket=fresh&next=%2Fdesktop`);
 	expect(popup).toHaveBeenCalledTimes(1);
 });
 it("obtains a fresh ticket for a separate tab and isolates its opener", async () => {

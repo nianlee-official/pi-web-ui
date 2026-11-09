@@ -1,5 +1,4 @@
 import { Fragment, memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { appResourceCrossOrigin } from "../base-url";
 import { FiList, FiSquare, FiPaperclip, FiArrowUp, FiBookOpen, FiMic, FiCamera } from "react-icons/fi";
 import type { FileSearchResult, ModelInfo, ProviderKeyInfo, SlashCommandInfo, UiMessage, UiState } from "../types";
 import { isZhLocale, useT, useI18n } from "../i18n";
@@ -1631,12 +1630,7 @@ export const ChatInput = memo(function ChatInput({
 								}
 							>
 								{imgSrc ? (
-									<img
-										crossOrigin={appResourceCrossOrigin(imgSrc)}
-										src={imgSrc}
-										alt={a.name}
-										className="attach-thumb"
-									/>
+									<img src={imgSrc} alt={a.name} className="attach-thumb" />
 								) : a.fileData ? (
 									"📄"
 								) : a.isDir ? (

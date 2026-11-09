@@ -24,8 +24,6 @@ function installHost(pageCall: PageCall): ReturnType<typeof vi.fn> {
 
 afterEach(() => {
 	delete (globalThis as unknown as Record<string, unknown>).__piWebUiHost;
-	delete (globalThis as unknown as Record<string, unknown>).__piBrowser;
-	delete (window as unknown as Record<string, unknown>).piDesktop;
 	vi.useRealTimers();
 });
 
@@ -74,54 +72,8 @@ describe("queryBrowserControl", () => {
 		});
 	});
 
-	it("旧桌面壳没有原生桥 → desktop:true，不等待宿主扩展桥", async () => {
-		(window as unknown as Record<string, unknown>).piDesktop = { isDesktop: true };
-		installHost(async () => {
-			throw new Error("should not be called in desktop shell");
-		});
-		const status = await queryBrowserControl();
-		expect(status.available).toBe(false);
-		expect(status.desktop).toBe(true);
-		expect(status.pages).toEqual([]);
-		expect(status.error).toContain("桌面版");
-	});
-
-	it("原生浏览器桥优先于宿主扩展桥，桌面壳也能查询", async () => {
-		(window as unknown as Record<string, unknown>).piDesktop = { isDesktop: true };
-		const fallback = installHost(async () => {
-			throw new Error("extension path must not run");
-		});
-		const pageCall = vi.fn(async () => ({
-			ok: true,
-			result: {
-				installed: true,
-				aiControl: true,
-				allowEval: false,
-				pages: [{ origin: "https://native.example", title: "Native", open: true, tabId: "native-tab" }],
-			},
-		}));
-		(globalThis as unknown as Record<string, unknown>).__piBrowser = { version: 1, pageCall };
-		expect(await queryBrowserControl()).toEqual({
-			available: true,
-			native: true,
-			aiControl: true,
-			allowEval: false,
-			pages: [{ origin: "https://native.example", title: "Native", open: true, tabId: "native-tab" }],
-		});
-		expect(pageCall).toHaveBeenCalledWith({ op: "status", timeoutMs: 5000 });
-		expect(fallback).not.toHaveBeenCalled();
-	});
-
-	it("不支持的原生桥版本保留网页版扩展路径", async () => {
-		(globalThis as unknown as Record<string, unknown>).__piBrowser = { version: 2, pageCall: vi.fn() };
-		const pageCall = installHost(async () => ({ ok: true, result: { installed: true } }));
-		expect((await queryBrowserControl()).available).toBe(true);
-		expect(pageCall).toHaveBeenCalledOnce();
-	});
-
-	it("原生桥晚于首查注入时保留1.5秒重试", async () => {
+	it("扩展桥晚于首查注入时保留1.5秒重试", async () => {
 		vi.useFakeTimers();
-		(window as unknown as Record<string, unknown>).piDesktop = { isDesktop: true };
 		const globals = globalThis as unknown as Record<string, unknown>;
 		const previousAct = globals.IS_REACT_ACT_ENVIRONMENT;
 		globals.IS_REACT_ACT_ENVIRONMENT = true;
@@ -137,9 +89,9 @@ describe("queryBrowserControl", () => {
 			await act(async () => {
 				root.render(createElement(Probe));
 			});
-			expect(latest).toMatchObject({ available: false, desktop: true });
+			expect(latest).toMatchObject({ available: false });
 			const pageCall = vi.fn(async () => ({ ok: true, result: { installed: true, aiControl: true, pages: [] } }));
-			globals.__piBrowser = { version: 1, pageCall };
+			globals.__piWebUiHost = { pageCall };
 			await act(async () => {
 				await vi.advanceTimersByTimeAsync(1500);
 			});
@@ -194,15 +146,6 @@ describe("compactPage / pageCitation（顶栏单页紧凑态 + 网页引用 chip
 			mode: "page",
 			key: "page:https://a.example",
 		});
-	});
-
-	it("原生同源多页引用以tabId区分，扩展页仍引用origin", () => {
-		const first = pageCitation({ ...a, tabId: "native-one" });
-		const second = pageCitation({ ...a, tabId: "native-two" });
-		expect(first).toEqual({ path: "native-one", name: "A 页", mode: "page", key: "page:native-one" });
-		expect(second.path).toBe("native-two");
-		expect(first.key).not.toBe(second.key);
-		expect(pageCitation(a).path).toBe(a.origin);
 	});
 
 	it("没有标题（或全是空白）→ 退化成 origin，chip 上不会空着", () => {

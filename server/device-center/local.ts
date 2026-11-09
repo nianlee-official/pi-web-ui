@@ -3,7 +3,6 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { createMobileNotificationForwarder } from "./mobile-notification-forwarder.js";
 import { getLocalBotOptions, type BotCatalogSources } from "./bot-catalog.js";
 import { applyLocalBotPreset } from "./bot-presets.js";
 import { installHubSetupRoutes } from "./hub-setup.js";
@@ -332,7 +331,6 @@ export async function installLocalDeviceCenter(options: Options) {
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 	}
-	const mobileNotifications = createMobileNotificationForwarder({ dataDir: options.dataDir, getBinding: activeConfig });
 	// entries are normalised exactly like the global guard does.
 	const allowHosts = new Set((options.allowHosts ?? []).map((entry) => hostWithoutPort(String(entry))).filter(Boolean));
 	const guard = localOnly(allowHosts);
@@ -1252,7 +1250,6 @@ export async function installLocalDeviceCenter(options: Options) {
 	return {
 		syncBots,
 		workItems,
-		publishMobileNotification: mobileNotifications.enqueue,
 		getConfig() {
 			const current = activeConfig();
 			if (!current) return undefined;
@@ -1260,7 +1257,6 @@ export async function installLocalDeviceCenter(options: Options) {
 		},
 		async close() {
 			closed = true;
-			await mobileNotifications.dispose();
 			options.lanAccess?.close();
 			await hubSetup.close();
 			generation++;

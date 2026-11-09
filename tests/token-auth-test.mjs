@@ -177,6 +177,15 @@ try {
 	check("WS with ?token= connects", wsOk === true, JSON.stringify(wsOk));
 	const wsBad = await wsTry("/ws?token=nope");
 	check("WS with wrong token rejected", typeof wsBad === "object");
+	const browserOrigin = `http://127.0.0.1:${PORT}`;
+	check(
+		"WS with matching browser Origin connects",
+		(await wsTry(`/ws?token=${encodeURIComponent(TOKEN)}`, { origin: browserOrigin })) === true,
+	);
+	for (const origin of ["capacitor://localhost", "https://localhost", `capacitor://127.0.0.1:${PORT}`]) {
+		const result = await wsTry(`/ws?token=${encodeURIComponent(TOKEN)}`, { origin });
+		check(`WS rejects removed app Origin ${origin}`, typeof result === "object", JSON.stringify(result));
+	}
 
 	await stopServer(server);
 	server = await startServer(TOKEN2);

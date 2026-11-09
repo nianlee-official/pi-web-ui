@@ -21,13 +21,10 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            mobile/package-lock.json
             plugins/vscode-editor/package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm ci
-          npm --prefix mobile ci --no-audit --no-fund
+        run: npm ci
 
       - name: Check formatting
         run: npm run format:check
@@ -42,9 +39,7 @@ jobs:
         run: npm run i18n:check
 
       - name: Typecheck
-        run: |
-          npm run typecheck
-          npm --prefix mobile run typecheck
+        run: npm run typecheck
 
       - name: Build
         run: npm run build

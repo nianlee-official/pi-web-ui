@@ -421,7 +421,6 @@ export function readOnlyToolCallAllowed(name: string, params: unknown): boolean 
 			"cascade",
 		].includes(action);
 	if (name === "browser_page") return ["pages", "read", "shot"].includes(String(p.op));
-	if (name === "browser_script") return ["list", "status"].includes(String(p.action));
 	return false;
 }
 

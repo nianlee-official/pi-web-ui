@@ -8,16 +8,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocket, WebSocketServer } from "ws";
 
-import {
-	capabilityBase,
-	createPortalResponse,
-	nativeResourceContentType,
-	parseDevicePath,
-	portalHeaders,
-	wrapperHtml,
-} from "./path-portal.js";
-import { nativeOrigin, type NativeOrigin } from "./hub-auth.js";
-import type { NativeCapabilityRequest } from "./hub-mobile.js";
+import { capabilityBase, createPortalResponse, parseDevicePath, portalHeaders, wrapperHtml } from "./path-portal.js";
 
 export const RELAY_LIMITS = {
 	frame: 512 * 1024,
@@ -614,11 +605,8 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 			deviceId: string;
 			accountId: string;
 			expiresAt: number;
-			nativeOrigin?: NativeOrigin;
-			isSessionActive?: () => boolean;
 		}
 	>();
-	const nativeSockets = new Map<WebSocket, () => Promise<boolean>>();
 	const pathRequest = (req: IncomingMessage) => {
 		if (req.headers.host?.toLowerCase() !== hub.host.toLowerCase()) return null;
 		const path = parseDevicePath(req.url);
@@ -638,13 +626,7 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 			(websocket && !safePath(path.path, "WS"))
 		)
 			return false;
-		if (!grant.nativeOrigin)
-			return (!req.headers.origin || req.headers.origin === "null") && (!websocket || req.headers.origin === "null");
-		if (req.headers.origin !== grant.nativeOrigin || !grant.isSessionActive?.()) return false;
-		if (!websocket && !path.path.startsWith("/api/") && !nativeResourceContentType(path.path, req.method || "GET"))
-			return false;
-		const owns = await options.ownsDevice(grant.accountId, id);
-		return owns && grant.expiresAt > Date.now() && grant.isSessionActive() && capabilities.get(path.token!) === grant;
+		return (!req.headers.origin || req.headers.origin === "null") && (!websocket || req.headers.origin === "null");
 	}
 	const wss = new WebSocketServer({ noServer: true, maxPayload: RELAY_LIMITS.frame, perMessageDeflate: false });
 	const browserWss = new WebSocketServer({ noServer: true, maxPayload: WS_MESSAGE_BYTES, perMessageDeflate: false });
@@ -932,16 +914,13 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 			res.writeHead(403).end();
 			return true;
 		}
-		const requestNativeOrigin = path?.token ? capabilities.get(path.token)?.nativeOrigin : undefined;
 		if (path && req.method === "OPTIONS") {
-			res.writeHead(204, portalHeaders(hub, capabilityBase(id, path.token!), requestNativeOrigin)).end();
+			res.writeHead(204, portalHeaders(hub, capabilityBase(id, path.token!))).end();
 			return true;
 		}
 		// Only authenticated capability requests receive opaque-origin response headers.
 		if (path) {
-			for (const [key, value] of Object.entries(
-				portalHeaders(hub, capabilityBase(id, path.token!), requestNativeOrigin),
-			))
+			for (const [key, value] of Object.entries(portalHeaders(hub, capabilityBase(id, path.token!))))
 				res.setHeader(key, value);
 		}
 		const forwardPath = path ? path.path! : req.url;
@@ -969,14 +948,7 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 			res,
 			...(path
 				? {
-						portal: createPortalResponse(
-							res,
-							hub,
-							capabilityBase(id, path.token!),
-							rewriteHtml,
-							requestNativeOrigin,
-							requestNativeOrigin ? nativeResourceContentType(forwardPath!, req.method || "GET") : undefined,
-						),
+						portal: createPortalResponse(res, hub, capabilityBase(id, path.token!), rewriteHtml),
 					}
 				: {}),
 		});
@@ -1028,10 +1000,6 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 				return;
 			}
 			browserWss.handleUpgrade(req, socket, head, (ws) => {
-				if (path?.token && capabilities.get(path.token)?.nativeOrigin) {
-					nativeSockets.set(ws, () => pathAuthorized(req, id, true));
-					ws.once("close", () => nativeSockets.delete(ws));
-				}
 				const streamId = randomBytes(12).toString("hex");
 				addStream(entry, streamId, { ws });
 				ws.pause();
@@ -1433,13 +1401,6 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 	options.server.on("upgrade", upgradeListener);
 	const heartbeat = setInterval(() => {
 		const now = Date.now();
-		for (const [ws, valid] of nativeSockets)
-			void valid().then(
-				(ok) => {
-					if (!ok) ws.terminate();
-				},
-				() => ws.terminate(),
-			);
 		for (const map of [tickets, sessions, capabilities])
 			for (const [key, value] of map) if (value.expiresAt <= now) map.delete(key);
 		for (const entry of devices.values()) {
@@ -1453,31 +1414,6 @@ export function createDeviceRelay(options: DeviceRelayOptions) {
 	}, 15_000);
 	heartbeat.unref();
 	return {
-		async createNativeCapability(request: NativeCapabilityRequest): Promise<string | null> {
-			const { deviceId, accountId, nativeOrigin: origin, isSessionActive } = request;
-			const generation = revision;
-			if (!nativeOrigin(origin) || !isSessionActive() || !(await options.ownsDevice(accountId, deviceId))) return null;
-			for (const [key, grant] of capabilities)
-				if (grant.expiresAt <= Date.now() || (grant.isSessionActive && !grant.isSessionActive()))
-					capabilities.delete(key);
-			if (
-				closed ||
-				generation !== revision ||
-				!devices.has(deviceId) ||
-				!isSessionActive() ||
-				capabilities.size >= RELAY_LIMITS.sessions
-			)
-				return null;
-			const token = randomBytes(32).toString("hex");
-			capabilities.set(token, {
-				deviceId,
-				accountId,
-				expiresAt: Date.now() + 8 * 60 * 60_000,
-				nativeOrigin: origin,
-				isSessionActive,
-			});
-			return hub.origin + capabilityBase(deviceId, token).replace(/\/$/, "");
-		},
 		async answerInteraction(deviceId: string, answer: import("../protocol.js").DeviceTaskInteractionAnswer) {
 			const entry = devices.get(deviceId);
 			if (

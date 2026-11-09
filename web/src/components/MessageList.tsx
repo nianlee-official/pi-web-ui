@@ -16,7 +16,7 @@ import { FiArrowDown } from "react-icons/fi";
 import type { ClientMessage, PromptAttachment, ToolStatus, UiMessage, UiState } from "../types";
 import { Message, asText } from "./Message";
 import { Markdown } from "./Markdown";
-import { appResourceUrl } from "../base-url";
+import { appUrl } from "../base-url";
 import { openImageLightbox } from "../image-lightbox-bridge";
 import { openFilePreview } from "../file-preview-bridge";
 
@@ -128,7 +128,7 @@ function QueuedMessage({
 								const handleClick = () => {
 									if (att.url) {
 										openImageLightbox({
-											src: att.url.startsWith("/") ? appResourceUrl(att.url) : att.url,
+											src: att.url.startsWith("/") ? appUrl(att.url) : att.url,
 											alt: att.name,
 										});
 									} else if (hasPath && att.path) {

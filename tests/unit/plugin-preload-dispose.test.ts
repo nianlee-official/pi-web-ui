@@ -8,7 +8,6 @@ export default { dispose() { globalThis.__preloadDisposes = (globalThis.__preloa
 		return `data:text/javascript,${encodeURIComponent(code)}#${path}`;
 	},
 }));
-vi.mock("../../web/src/mobile-runtime", () => ({ isMobileRuntime: () => false }));
 
 beforeEach(() => {
 	vi.resetModules();

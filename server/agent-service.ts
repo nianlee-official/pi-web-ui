@@ -5,13 +5,6 @@ import { PendingQuestion, type QuestionResult } from "./pending-question.js";
 import { formatSubagentsCompletionNotice } from "./subagent-notify.js";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import {
-	deliverMobileNotificationEvent,
-	mobileNotificationOutcome,
-	type MobileNotificationCallback,
-	type MobileNotificationEvent,
-	type MobileNotificationTurn,
-} from "./mobile-notification-events.js";
 import * as fsPromises from "node:fs/promises";
 import { DEFAULT_PI_CAPABILITIES } from "./engine-capabilities.js";
 import { existsSync, readFileSync, readdirSync, rmSync, mkdirSync, statSync, watch, writeFileSync } from "node:fs";
@@ -547,8 +540,6 @@ import {
 	makeBrowserPageTool,
 	extractShotImage,
 } from "./browser-page-tool.js";
-import { makeBrowserScriptTool } from "./browser-script-tool.js";
-export { makeBrowserScriptTool };
 export {
 	makeAskUserQuestionTool,
 	shouldPopQuestion,
@@ -671,7 +662,6 @@ export interface Conversation {
 	lastCompactionTokens?: number | null;
 	pendingTask?: string;
 	pluginRunId?: string;
-	notificationTurn?: MobileNotificationTurn;
 	pendingPluginRunId?: string;
 	kickoff?: Promise<unknown>;
 	toolWatchdogs: Map<string, ReturnType<typeof setTimeout>>;
@@ -868,8 +858,6 @@ export class ClientSession {
 	}
 	readonly #lateGuard: ToolGuardHook = makeLateToolGuard(() => this.toolGuard);
 	onRunEvent: ((ev: PluginRunEvent) => void) | undefined = undefined;
-	onNotificationEvent: MobileNotificationCallback | undefined = undefined;
-	private notifiedQuestions = new Set<string>();
 	onConversationChanged: (() => void) | undefined = undefined;
 	onClientModelChanged: ((snap: PluginConversationSnapshot) => void) | undefined = undefined;
 	pluginToolsProvider: ((cwd?: string) => PluginAgentTool[]) | undefined = undefined;
@@ -1134,7 +1122,6 @@ export class ClientSession {
 		if (this.convs.get(conv.id) !== conv || this.disposed) return;
 		const kind = event.type;
 		const sessionId = conv.session.sessionId;
-		this.notifyMobile(conv, kind, `${binding.key}:${event.eventId}`);
 		this.emit({
 			type: "native_cli_event",
 			eventId: `${sessionId}:${binding.key}:${event.eventId}`,
@@ -3576,7 +3563,6 @@ export class ClientSession {
 			blank?: boolean;
 			blankTitle?: string;
 			idleHeld?: boolean;
-			onNotificationEvent?: MobileNotificationCallback;
 		},
 	): Promise<ClientSession> {
 		const botExecution = getBotExecution(clientId);
@@ -3588,7 +3574,6 @@ export class ClientSession {
 		const agentDir = process.env.PI_CODING_AGENT_DIR ?? getAgentDir();
 
 		const cs = new ClientSession(clientId, cwd, agentDir, stateStore);
-		cs.onNotificationEvent = opts?.onNotificationEvent;
 		cs.botExecution = botExecution;
 		botExecution?.captureModel(stateStore.getDefaultModel("pi"));
 		if (botExecution) opts = { blank: true };
@@ -4220,7 +4205,6 @@ export class ClientSession {
 						),
 						makeAskUserQuestionTool(bridge, ownerId),
 						makeBrowserPageTool(bridge, ownerId),
-						makeBrowserScriptTool(bridge, ownerId),
 						makeConversationReadTool(this.conversationReadHost(), () => this.getLang(), {
 							listClaims: (cwd) =>
 								(this.getClaimStore?.().list(cwd) ?? []).map((c) => ({
@@ -4731,77 +4715,6 @@ export class ClientSession {
 		this.sinks.delete(send);
 		if (this.sinks.size === 0) {
 			this.files.unwatchDir();
-		}
-	}
-
-	private notifyMobile(
-		conv: Conversation,
-		kind: MobileNotificationEvent["kind"],
-		id: string,
-		sessionId = conv.session?.sessionId,
-		occurredAt = Date.now(),
-	): void {
-		if (this.disposed || !sessionId) return;
-		deliverMobileNotificationEvent(this.onNotificationEvent, {
-			eventId: `${sessionId}:${kind}:${id}`,
-			kind,
-			clientId: this.clientId,
-			sessionId,
-			conversationId: conv.id,
-			occurredAt,
-		});
-	}
-
-	private notificationTurn(conv: Conversation): MobileNotificationTurn {
-		if (!conv.notificationTurn || conv.notificationTurn.notified) {
-			conv.notificationTurn = {
-				id: randomUUID(),
-				sessionId: conv.session.sessionId,
-				settled: false,
-				error: false,
-				aborted: false,
-				notified: false,
-			};
-		}
-		return conv.notificationTurn;
-	}
-
-	private notifyUserQuestion(request: PendingQuestion): void {
-		if (request.settled || request.audience !== "user") return;
-		const conv = this.convs.get(request.conversationId);
-		const sessionId = conv?.session?.sessionId;
-		if (!conv || !sessionId) return;
-		const key = `${sessionId}:${request.id}`;
-		if (this.notifiedQuestions.has(key)) return;
-		this.notifiedQuestions.add(key);
-		this.notifyMobile(conv, "question", request.id, conv.session.sessionId, request.createdAt);
-	}
-
-	private notifyConversationCompletion(conv: Conversation): void {
-		const busy = this.conversationStreaming(conv) || this.completionPending(conv);
-		if (busy && !conv.notificationTurn) this.notificationTurn(conv);
-		const turn = conv.notificationTurn;
-		if (
-			!turn ||
-			turn.notified ||
-			!turn.settled ||
-			busy ||
-			conv.retryState ||
-			conv.compactionState ||
-			conv.pendingCompaction ||
-			turn.compactionPending ||
-			this.isWaitingOnUser(conv.id) ||
-			this.subagentTaskPending(conv)
-		)
-			return;
-		turn.notified = true;
-		if (!turn.aborted) {
-			this.notifyMobile(
-				conv,
-				turn.error ? "error" : conv.isSubagent ? "subagentDone" : "done",
-				turn.id,
-				turn.sessionId,
-			);
 		}
 	}
 
@@ -5508,7 +5421,6 @@ export class ClientSession {
 					conv.retryState = null;
 					finishTurnTiming(conv);
 					conv.promptInFlight = false;
-					Object.assign(this.notificationTurn(conv), mobileNotificationOutcome(event.messages), { settled: true });
 				}
 				try {
 					const lastAssistant = [...(event.messages as unknown[])].reverse().find((m) => {
@@ -5623,14 +5535,11 @@ export class ClientSession {
 				} catch {}
 				if (!event.willRetry && !aborted && conv.pendingCompaction && !this.disposed) {
 					const pending = conv.pendingCompaction;
-					const turn = this.notificationTurn(conv);
 					const compactionSession = conv.session;
-					turn.compactionPending = true;
 					conv.pendingCompaction = null;
 					setTimeout(() => {
 						if (!this.disposed) {
 							void this.executePendingCompaction(conv, pending).finally(() => {
-								turn.compactionPending = false;
 								const owner = this.findConversationHome?.(compactionSession)?.session ?? this;
 								owner.emitConversations();
 							});
@@ -5709,7 +5618,6 @@ export class ClientSession {
 				break;
 			}
 			case "agent_start": {
-				Object.assign(this.notificationTurn(conv), { settled: false, error: false, aborted: false });
 				startTurnTiming(conv);
 				conv.promptInFlight = false;
 				if (conv.pendingPluginRunId) {
@@ -6148,7 +6056,6 @@ export class ClientSession {
 	private registerQuestion(request: PendingQuestion): void {
 		if (request.settled) return;
 		this.pendingQuestions.set(request.id, request);
-		this.notifyUserQuestion(request);
 		request.onSettled = () => {
 			this.pendingQuestions.delete(request.id);
 			this.emit({ type: "question_retracted", id: request.id, owner: this.clientId });
@@ -6637,7 +6544,6 @@ export class ClientSession {
 
 	private questionsChanged(): void {
 		for (const owner of new Set([this, ...(this.allSubagentSessions?.() ?? [])])) {
-			for (const request of owner.pendingQuestions.values()) owner.notifyUserQuestion(request);
 			owner.emitQuestionQueue();
 		}
 		this.emitConversations();
@@ -6851,7 +6757,6 @@ export class ClientSession {
 				}, unattendedApprovalMs);
 				unattendedTimer.unref?.();
 			}
-			this.notifyMobile(conv, "approval", id, conv.session?.sessionId, entry.createdAt);
 			this.emit({
 				type: "tool_approval_pending",
 				id,
@@ -7365,7 +7270,7 @@ export class ClientSession {
 	private static readonly PI_CLI_PROBE_TTL_MS = 10_000;
 
 	private isPiCliInstalled(): boolean {
-		if (process.env.PI_PORTABLE === "1" || this.sharedModelRuntime != null) {
+		if (this.sharedModelRuntime != null) {
 			return true;
 		}
 		const now = Date.now();
@@ -10394,7 +10299,6 @@ export class ClientSession {
 			}
 			startTurnTiming(conv);
 			conv.promptInFlight = true;
-			this.notificationTurn(conv);
 			conv.viewOnly = false;
 			this.flushSnapshot();
 			const scan = scanAtMentions(trimmedText, conv.cwd, [], attachments ?? []);
@@ -10538,11 +10442,6 @@ export class ClientSession {
 				}
 			}
 		} catch (err) {
-			Object.assign(conv.notificationTurn ?? this.notificationTurn(conv), {
-				settled: true,
-				error: !conv.activePromptAc?.signal.aborted,
-				aborted: !!conv.activePromptAc?.signal.aborted,
-			});
 			conv.activePromptAc = undefined;
 			if (!conv.session.isStreaming) finishTurnTiming(conv);
 			if (
@@ -12304,7 +12203,6 @@ export class ClientSession {
 	}
 
 	private emitConversations(): void {
-		for (const conv of this.convs.values()) this.notifyConversationCompletion(conv);
 		const conversations: ConversationSummary[] = [];
 		const visibleParents = new Set(
 			[...this.convs.values()]

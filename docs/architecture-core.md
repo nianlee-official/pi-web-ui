@@ -14,11 +14,9 @@ pi 引擎的 `steeringMode` 与 `followUpMode` 默认均为 `all`：在各自交
 
 完成提示音、桌面通知和结束播报使用独立的工作状态边沿：`isStreaming || completionPending`。`completionPending` 在活动快照和运行会话摘要中发布，包含排队 steering/follow-up、提示投递窗口，以及子代理通知的聚合等待和异步投递；不会改变 `isStreaming` 的输出语义。子代理通知在异步结算工作树和投递期间持续占用待办计数，投递完成或失败后通过父对话当前持有方刷新状态。连续续跑直到队列排空才触发一次完成通知，前台、后台均适用。
 
-## 手机系统通知与多设备
+## 共享对话只读查看
 
-React + Capacitor 手机客户端、Hub 账号隔离推送与设备切换见 [`mobile.md`](mobile.md)。手机通知由服务端 `onNotificationEvent` 权威事件触发，不依赖 WebSocket sinks；重试、压缩、人工等待与子任务依赖未收口时不得提前报告完成。
-
-通知点击携带实例、设备、session 与 owner / conversation 标识。跨客户端通过 `open_shared_conversation` 的 `readOnly: true` 查看原执行对象，快照的 `sharedConversation.readOnly` 驱动只读 UI；服务端只允许查询及已有问卷 / 单次审批答复，拒绝 prompt、终端、设置和工作区写操作。该模式可查看 independent / 子代理，但不放宽普通共享入口，也不搬迁 owner 或重新 load 会话。
+跨客户端通过 `open_shared_conversation` 的 `readOnly: true` 查看原执行对象，快照的 `sharedConversation.readOnly` 驱动只读 UI；服务端只允许查询及已有问卷 / 单次审批答复，拒绝 prompt、终端、设置和工作区写操作。该模式可查看 independent / 子代理，但不放宽普通共享入口，也不搬迁 owner 或重新 load 会话。
 
 ## 桌面通知定位对话
 
